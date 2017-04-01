@@ -6,7 +6,7 @@
     <include>True</include>
     <multi>True</multi>
     <spbkgnd>1</spbkgnd>
-    <spcolour>8</spcolour>
+    <spcolour>1</spcolour>
     <mcolour1>2</mcolour1>
     <mcolour2>5</mcolour2>
     <expandx>False</expandx>

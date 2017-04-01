@@ -7,7 +7,7 @@ initPlayer      lda #animIdle
                 lda #$01
                 sta $d015               ;enable sprite 0
                 sta $d01c               ;set multicolor sprite 0
-                lda #$08
+                lda #$01
                 sta $d027               ;set sprite color
                 rts
 
