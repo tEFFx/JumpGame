@@ -1,4 +1,4 @@
-initPlayer      lda #$80
+initPlayer      lda #animIdle
                 sta $07f8               ;set sprite pointer
                 lda #$10
                 sta $d000               ;set sprite x pos
@@ -7,7 +7,7 @@ initPlayer      lda #$80
                 lda #$01
                 sta $d015               ;enable sprite 0
                 sta $d01c               ;set multicolor sprite 0
-                lda #$05
+                lda #$08
                 sta $d027               ;set sprite color
                 rts
 
@@ -27,6 +27,23 @@ updatePlayer    jsr playerMove
                 inx
                 stx jumpPos
 @end            jsr playerGravity
+                jsr playerAnim
+                rts
+
+playerAnim      lda animCounter
+                cmp #animSpeed
+                bcc @end
+                lda #$00
+                sta animCounter
+                ldx animFrame
+                inx
+                cpx #$03                ;max frames
+                bne @updateFrame
+                ldx #$00
+@updateFrame    stx animFrame
+                lda animRun,x
+                sta $07f8
+@end            inc animCounter
                 rts
                 
 
@@ -121,6 +138,15 @@ playerGravity   lda $d001
                 lda #sineTableHalf
                 sta jumpPos
 @end            rts
+
+animIdle = $80
+animRun         BYTE $81,$82,$83
+animRunLen = $03
+animSpeed = $04
+animCounter     BYTE $00
+animFrame       BYTE $00
+animCurr        BYTE $00
+animCurrLen     BYTE $00
 
 zeroPtr = $FB
 rowTable        BYTE $0400,$0428,$0450,$0478,$04A0,$04C8,$04F0,$0518,$0540,$0568,$0590,$05B8,$05E0,$0608,$0630,$0658,$0680,$06A8,$06D0,$06F8,$0720,$0748,$0770,$0798,$0400

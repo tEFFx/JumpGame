@@ -1,14 +1,154 @@
 <?xml version="1.0" encoding="utf-8"?>
 <sprites>
   <sprite>
-    <description></description>
+    <description>idle right</description>
     <links></links>
     <include>True</include>
     <multi>True</multi>
     <spbkgnd>1</spbkgnd>
-    <spcolour>5</spcolour>
-    <mcolour1>9</mcolour1>
-    <mcolour2>10</mcolour2>
+    <spcolour>8</spcolour>
+    <mcolour1>2</mcolour1>
+    <mcolour2>5</mcolour2>
+    <expandx>False</expandx>
+    <expandy>False</expandy>
+    <sdata>
+      <data>131200</data>
+      <data>33280</data>
+      <data>33280</data>
+      <data>33280</data>
+      <data>33280</data>
+      <data>15360</data>
+      <data>65280</data>
+      <data>849664</data>
+      <data>1045760</data>
+      <data>261888</data>
+      <data>62720</data>
+      <data>64768</data>
+      <data>0</data>
+      <data>174613</data>
+      <data>567984</data>
+      <data>567824</data>
+      <data>567808</data>
+      <data>829952</data>
+      <data>33280</data>
+      <data>33280</data>
+      <data>33280</data>
+    </sdata>
+   </sprite>
+  <sprite>
+    <description>walk right 0</description>
+    <links></links>
+    <include>True</include>
+    <multi>True</multi>
+    <spbkgnd>1</spbkgnd>
+    <spcolour>8</spcolour>
+    <mcolour1>2</mcolour1>
+    <mcolour2>5</mcolour2>
+    <expandx>False</expandx>
+    <expandy>False</expandy>
+    <sdata>
+      <data>131200</data>
+      <data>33280</data>
+      <data>33280</data>
+      <data>33280</data>
+      <data>33280</data>
+      <data>15360</data>
+      <data>65280</data>
+      <data>849664</data>
+      <data>1045760</data>
+      <data>261888</data>
+      <data>62720</data>
+      <data>64768</data>
+      <data>0</data>
+      <data>174613</data>
+      <data>567984</data>
+      <data>567824</data>
+      <data>567808</data>
+      <data>829952</data>
+      <data>32896</data>
+      <data>32896</data>
+      <data>131200</data>
+    </sdata>
+   </sprite>
+  <sprite>
+    <description>walk right 1</description>
+    <links></links>
+    <include>True</include>
+    <multi>True</multi>
+    <spbkgnd>1</spbkgnd>
+    <spcolour>8</spcolour>
+    <mcolour1>2</mcolour1>
+    <mcolour2>5</mcolour2>
+    <expandx>False</expandx>
+    <expandy>False</expandy>
+    <sdata>
+      <data>0</data>
+      <data>131200</data>
+      <data>33280</data>
+      <data>33280</data>
+      <data>33280</data>
+      <data>15360</data>
+      <data>65280</data>
+      <data>849664</data>
+      <data>1045760</data>
+      <data>261888</data>
+      <data>62720</data>
+      <data>64789</data>
+      <data>48</data>
+      <data>174736</data>
+      <data>567808</data>
+      <data>567808</data>
+      <data>829952</data>
+      <data>43520</data>
+      <data>32896</data>
+      <data>131104</data>
+      <data>524320</data>
+    </sdata>
+   </sprite>
+  <sprite>
+    <description>walk right 2</description>
+    <links></links>
+    <include>True</include>
+    <multi>True</multi>
+    <spbkgnd>1</spbkgnd>
+    <spcolour>8</spcolour>
+    <mcolour1>2</mcolour1>
+    <mcolour2>5</mcolour2>
+    <expandx>False</expandx>
+    <expandy>False</expandy>
+    <sdata>
+      <data>0</data>
+      <data>0</data>
+      <data>655520</data>
+      <data>33280</data>
+      <data>33280</data>
+      <data>33280</data>
+      <data>15360</data>
+      <data>65280</data>
+      <data>849664</data>
+      <data>1045760</data>
+      <data>261888</data>
+      <data>62720</data>
+      <data>64768</data>
+      <data>174592</data>
+      <data>567829</data>
+      <data>567984</data>
+      <data>829968</data>
+      <data>43520</data>
+      <data>33280</data>
+      <data>10240</data>
+      <data>34816</data>
+    </sdata>
+   </sprite>
+  <sprite>
+    <description>jump</description>
+    <links></links>
+    <include>True</include>
+    <multi>True</multi>
+    <spbkgnd>1</spbkgnd>
+    <spcolour>8</spcolour>
+    <mcolour1>2</mcolour1>
+    <mcolour2>5</mcolour2>
     <expandx>False</expandx>
     <expandy>False</expandy>
     <sdata>
@@ -16,23 +156,23 @@
       <data>0</data>
       <data>0</data>
       <data>0</data>
-      <data>21504</data>
-      <data>91392</data>
-      <data>371008</data>
-      <data>436820</data>
-      <data>389952</data>
-      <data>488256</data>
-      <data>488768</data>
-      <data>524096</data>
-      <data>87296</data>
-      <data>436800</data>
-      <data>420416</data>
-      <data>420416</data>
-      <data>485952</data>
-      <data>108800</data>
-      <data>104704</data>
-      <data>104704</data>
-      <data>17408</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
+      <data>0</data>
     </sdata>
    </sprite>
     <!-- Scratchpad data -->

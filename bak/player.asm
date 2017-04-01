@@ -1,4 +1,4 @@
-initPlayer      lda #$80
+initPlayer      lda #$81
                 sta $07f8               ;set sprite pointer
                 lda #$10
                 sta $d000               ;set sprite x pos
@@ -7,7 +7,7 @@ initPlayer      lda #$80
                 lda #$01
                 sta $d015               ;enable sprite 0
                 sta $d01c               ;set multicolor sprite 0
-                lda #$05
+                lda #$08
                 sta $d027               ;set sprite color
                 rts
 
@@ -18,7 +18,7 @@ updatePlayer    jsr playerMove
                 beq @end                ;jumpPos == 0 => no jump
                 cpx #sineTableHalf
                 bcs @falling
-                sbc sineTable-1,x       ;juming
+                sbc sineTable-1,x       ;jumping
                 jmp @updateY
 @falling        adc sineTable-1,x
 @updateY        sta $d001
@@ -103,15 +103,24 @@ playerGravity   lda $d001
                 ldy #$27
 @checkChar      lda (zeroPtr),y
                 cmp #$80
+                bcc @checkFall
+@onGround       lda jumpPos
+                cmp #sineTableHalf
                 bcc @end
-@onGround       txa                             ;rowcollision stored in x register
+                txa                             ;rowcollision stored in x register
                 asl                             
                 asl
                 adc #$1d
                 sta $d001                       ;move sprite to ground
                 lda #$00
                 sta jumpPos
-                rts
+                jmp @end
+@checkFall      lda jumpPos                     ;if not on ground and jumpPos == 0, start falling
+                cmp #$00
+                bne @end
+                lda #sineTableHalf
+                sta jumpPos
+@end            rts
 
 zeroPtr = $FB
 rowTable        BYTE $0400,$0428,$0450,$0478,$04A0,$04C8,$04F0,$0518,$0540,$0568,$0590,$05B8,$05E0,$0608,$0630,$0658,$0680,$06A8,$06D0,$06F8,$0720,$0748,$0770,$0798,$0400

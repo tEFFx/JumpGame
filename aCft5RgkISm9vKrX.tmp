@@ -3,9 +3,9 @@
 
 *=$1000
 init            jsr drawRoom
-                lda #$09                ;set up sprite multicolor
+                lda #$02                ;set up sprite multicolor
                 sta $d025
-                lda #$0A
+                lda #$05
                 sta $d026
                 jsr initPlayer
                 sei                     ;set up irq routine
