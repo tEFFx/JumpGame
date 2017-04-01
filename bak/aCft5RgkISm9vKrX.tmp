@@ -1,3 +1,5 @@
+##{0:0:0:main.prg}C:\Users\erikk\GitHub\JumpGame\main.asm
+
 
 *=$1000
 init            jsr drawRoom
@@ -28,10 +30,11 @@ init            jsr drawRoom
 
 irq             dec $d019
                 jsr updatePlayer
-                jmp $ea81 
+                jmp $ea81
 
 Incasm "drawRoom.asm"
 Incasm "joystick.asm"
 Incasm "player.asm"
 Incasm "sprites.asm"                    ;$2000
 Incasm "rooms.asm"                      ;$4000
+

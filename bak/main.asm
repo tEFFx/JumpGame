@@ -28,7 +28,7 @@ init            jsr drawRoom
 
 irq             dec $d019
                 jsr updatePlayer
-                jmp $ea81
+                jmp $ea81 
 
 Incasm "drawRoom.asm"
 Incasm "joystick.asm"
