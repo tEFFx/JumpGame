@@ -13,9 +13,20 @@ initPlayer      lda #animIdle
 
 updatePlayer    jsr playerMove
                 ldx jumpPos
-                lda $d001
                 cpx #$00
                 beq @end                ;jumpPos == 0 => no jump
+                lda $d000               ;check if tile is above player
+                sta checkPos
+                lda $d001
+                sbc #21
+                sta checkPos+1
+                jsr collCheck
+                cmp #$e0                ;if solid tile, stop jump
+                bne @checkJump          ;else continue jump
+                lda #sineTableHalf      ;make jump fall
+                sta jumpPos
+@checkJump      lda $d001
+                ldx jumpPos
                 cpx #sineTableHalf
                 bcs @falling
                 sbc sineTable-1,x       ;jumping
