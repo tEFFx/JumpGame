@@ -101,43 +101,17 @@ playerMove      lda $d010
                 inc jumpPos
 @end            rts
 
-playerGravity   lda $d001
-                adc #$01                        ;offset some pixels
-                lsr                             ;ypos / 4 (rowTable contains 16bit pointers)
-                lsr
-                sbc #$07                        ;offset for top border
-                and #$fe                        ;avoid uneven numbers
-                tay
-                tax                             ;store in x for later use
-                lda rowTable,y
-                sta zeroPtr
-                lda rowTable+1,y
-                sta zeroPtr+1
-                lda $d000
-                lsr                             ;xpos / 8
-                lsr
-                lsr
-                sbc #$01                        ;center offset
-                tay
-                lda $d010
-                and #$01
-                cmp #$01                        ;if upper bit is used, add 31 to charPtr
-                bne @chkOverflow               
-                tya
-                clc
-                adc #$1f
-                tay
-@chkOverflow    tya
-                cmp #$28                        ;make sure that position overflows with x-position
-                bcc @checkChar
-                ldy #$27
-@checkChar      lda (zeroPtr),y
+playerGravity   lda $d000
+                sta checkPos
+                lda $d001
+                sta checkPos+1
+                jsr collCheck
                 cmp #$80
                 bcc @checkFall
 @onGround       lda jumpPos
                 cmp #sineTableHalf
                 bcc @end
-                txa                             ;rowcollision stored in x register
+                lda collPos+1                   ;get row collision 
                 asl                             
                 asl
                 adc #$1d
@@ -167,10 +141,7 @@ animOffset      BYTE $06
 animCounter     BYTE $00
 animFrame       BYTE $00
 
-zeroPtr = $FB
-rowTable        BYTE $0400,$0428,$0450,$0478,$04A0,$04C8,$04F0,$0518,$0540,$0568,$0590,$05B8,$05E0,$0608,$0630,$0658,$0680,$06A8,$06D0,$06F8,$0720,$0748,$0770,$0798,$0400
 jumpPos         BYTE $17
-
 sineTableLen = 45
 sineTableHalf= 22
 sineTable       BYTE $03,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$01,$01,$01,$01,$01,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$01,$01,$01,$01,$01,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$03

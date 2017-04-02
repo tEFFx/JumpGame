@@ -1,4 +1,4 @@
-##{0:0:0:main.prg}C:\Users\TF\Documents\GitHub\JumpGame\main.asm
+##{0:0:0:main.prg}C:\Users\erikk\GitHub\JumpGame\main.asm
 
 
 *=$1000
@@ -34,6 +34,7 @@ irq             dec $d019
 
 Incasm "drawRoom.asm"
 Incasm "joystick.asm"
+Incasm "collisionDetection.asm"
 Incasm "player.asm"
 Incasm "sprites.asm"                    ;$2000
 Incasm "rooms.asm"                      ;$4000

@@ -7,7 +7,7 @@ initPlayer      lda #animIdle
                 lda #$01
                 sta $d015               ;enable sprite 0
                 sta $d01c               ;set multicolor sprite 0
-                lda #$08
+                lda #$01
                 sta $d027               ;set sprite color
                 rts
 
@@ -42,6 +42,7 @@ playerAnim      lda animCounter
                 ldx #$00
 @updateFrame    stx animFrame
                 txa
+                clc
                 adc animOffset
                 tax
                 lda animations,x
@@ -62,7 +63,7 @@ playerMove      lda $d010
                 jmp @flipUpper
 @checkLow       clc
                 cmp #$00
-                bne @moveRight
+                bne @checkIdle
                 lda #$56
                 sta $d000
                 jmp @flipUpper
@@ -74,19 +75,24 @@ playerMove      lda $d010
                 jmp @flipUpper
 @checkLower     clc
                 cmp #$00
-                bne @moveRight
+                bne @checkIdle
                 lda #$ff
                 sta $d000
 @flipUpper      lda $d010
                 eor #01
                 sta $d010
+@checkIdle      lda animOffset
+                cmp #$04
+                bcc @moveRight
+                sbc #$06                        ;offset from walk to idleLeft
+                sta animOffset
 @moveRight      checkJoy joyRight, @moveLeft
                 inc $d000
-                lda walkRight
+                lda #walkRight
                 sta animOffset
 @moveLeft       checkJoy joyLeft, @moveUp
                 dec $d000
-                lda walkLeft
+                lda #walkLeft
                 sta animOffset
 @moveUp         checkJoy joyUp, @end
                 lda jumpPos
