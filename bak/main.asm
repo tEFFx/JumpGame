@@ -32,6 +32,7 @@ irq             dec $d019
 
 Incasm "drawRoom.asm"
 Incasm "joystick.asm"
+Incasm "collisionDetection.asm"
 Incasm "player.asm"
 Incasm "sprites.asm"                    ;$2000
 Incasm "rooms.asm"                      ;$4000

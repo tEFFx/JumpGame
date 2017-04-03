@@ -15,15 +15,17 @@ updatePlayer    jsr playerMove
                 ldx jumpPos
                 cpx #$00
                 beq @end                ;jumpPos == 0 => no jump
-                lda $d000               ;check if tile is above player
-                sta checkPos
-                lda $d001
-                sbc #21
-                sta checkPos+1
-                jsr collCheck
+                lda $d001               ;check if tile is above player
+                jsr collPosY
+                sbc #$04
+                jsr strPosY
+                lda $d000
+                jsr collPosX
+                getOverflowBit $01
+                jsr ldCharAtPos
                 cmp #$e0                ;if solid tile, stop jump
                 bne @checkJump          ;else continue jump
-                lda #sineTableHalf      ;make jump fall
+                lda #sineTableHalf+1      ;make jump fall
                 sta jumpPos
 @checkJump      lda $d001
                 ldx jumpPos
@@ -112,11 +114,13 @@ playerMove      lda $d010
                 inc jumpPos
 @end            rts
 
-playerGravity   lda $d000
-                sta checkPos
-                lda $d001
-                sta checkPos+1
-                jsr collCheck
+playerGravity   lda $d001
+                jsr collPosY
+                jsr strPosY
+                lda $d000
+                jsr collPosX
+                getOverflowBit $01
+                jsr ldCharAtPos
                 cmp #$80
                 bcc @checkFall
 @onGround       lda jumpPos

@@ -43,10 +43,22 @@
         <FileName>player.asm</FileName>
         <FileName>joystick.asm</FileName>
         <FileName>jumptables.asm</FileName>
+        <FileName>collisionDetection.asm</FileName>
     </BuildList>
     <DetermineBuildOrder>0</DetermineBuildOrder>
     <PaddingByte>234</PaddingByte>
     <SourceFiles>
+        <SourceFile>
+            <Name>collisionDetection.asm</Name>
+            <PrgName />
+            <FileType>2</FileType>
+            <IncludeInBuild>True</IncludeInBuild>
+            <Regions />
+            <Breakpoints />
+            <Bookmarks />
+            <Topmost>False</Topmost>
+            <FileOpen>True</FileOpen>
+        </SourceFile>
         <SourceFile>
             <Name>drawRoom.asm</Name>
             <PrgName />
@@ -98,7 +110,7 @@
             <IncludeInBuild>True</IncludeInBuild>
             <Regions />
             <Breakpoints />
-            <Bookmarks>147,87,</Bookmarks>
+            <Bookmarks>132,98,</Bookmarks>
             <Topmost>False</Topmost>
             <FileOpen>True</FileOpen>
         </SourceFile>
