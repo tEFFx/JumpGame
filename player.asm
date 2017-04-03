@@ -100,13 +100,35 @@ playerMove      lda $d010
                 sbc #$06                        ;offset from walk to idleLeft
                 sta animOffset
 @moveRight      checkJoy joyRight, @moveLeft
+                lda #walkRight                  ;set animation
+                sta animOffset
+                lda $d001                       ;check for collisions
+                jsr collPosY
+                sbc #$02                        ;offset y 1 char up
+                jsr strPosY
+                lda $d000
+                jsr collPosX
+                adc #$01                        ;offset x 1 char right
+                getOverflowBit $01
+                jsr ldCharAtPos
+                cmp #$e0
+                beq @moveLeft
                 inc $d000
-                lda #walkRight
-                sta animOffset
 @moveLeft       checkJoy joyLeft, @moveUp
-                dec $d000
-                lda #walkLeft
+                lda #walkLeft                   ;set animation
                 sta animOffset
+                lda $d001                       ;check for collisions
+                jsr collPosY
+                sbc #$02                        ;offset y 1 char up
+                jsr strPosY
+                lda $d000
+                jsr collPosX
+                sbc #$01                        ;offset x 1 char left
+                getOverflowBit $01
+                jsr ldCharAtPos
+                cmp #$e0
+                beq @moveUp
+                dec $d000
 @moveUp         checkJoy joyUp, @end
                 lda jumpPos
                 cmp #$00
