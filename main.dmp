@@ -5,738 +5,799 @@
 00005  0801  0E 08 0A              BYTE    $0E, $08, $0A, $00, $9E, $20, $28,  $34, $30, $39, $36, $29, $00, $00, $00
 00006  0810             
 00007  0810             *=$1000
-00008  1000  20 50 10   INIT       JSR CLEARSCR
-00009  1003  A9 0B                 LDA #$0B
-00010  1005  8D 21 D0              STA $D021
-00011  1008  20 CD 10              JSR DRAWROOM
-00012  100B  A9 02                 LDA #$02                ;SET UP SPRITE MULTICOLOR
-00013  100D  8D 25 D0              STA $D025
-00014  1010  A9 05                 LDA #$05
-00015  1012  8D 26 D0              STA $D026
-00016  1015  20 10 12              JSR INITPLAYER
-00017  1018  78                    SEI                     ;SET UP IRQ ROUTINE
-00018  1019  A0 1F                 LDY #$7F/4
-00019  101B  8C 0D DC              STY $DC0D
-00020  101E  8C 0D DD              STY $DD0D
-00021  1021  AD 0D DC              LDA $DC0D
-00022  1024  AD 0D DD              LDA $DD0D
-00023  1027  A9 01                 LDA #$01
-00024  1029  8D 1A D0              STA $D01A
-00025  102C  A9 47                 LDA #<IRQ
-00026  102E  A2 10                 LDX #>IRQ
-00027  1030  8D 14 03              STA $0314
-00028  1033  8E 15 03              STX $0315
-00029  1036  A9 00                 LDA #$00
-00030  1038  8D 12 D0              STA $D012
-00031  103B  AD 11 D0              LDA $D011
-00032  103E  29 7F                 AND #$7F
-00033  1040  8D 11 D0              STA $D011
-00034  1043  58                    CLI
-00035  1044  4C 44 10              JMP *
-00036  1047             
-00037  1047  CE 19 D0   IRQ        DEC $D019
-00038  104A  20 2D 12              JSR UPDATEPLAYER
-00039  104D  4C 81 EA              JMP $EA81
-00040  1050             
-00041  1050  A9 20      CLEARSCR   LDA #$20
-00042  1052  A2 00                 LDX #$00
-00043  1054  9D 00 04   @LOOP      STA $0400,X
-00044  1057  9D 00 05              STA $0500,X
-00045  105A  9D 00 06              STA $0600,X
-00046  105D  9D E8 06              STA $06E8,X
-00047  1060  E8                    INX
-00048  1061  D0 F1                 BNE @LOOP
-00049  1063  60                    RTS
-00050  1064             
-00051  1064  00 04 28   ROWTABLE   BYTE $0400,$0428,$0450,$0478,$04A0,$04C8,$04F0,$0518,$0540,$0568,$0590,$05B8,$05E0,$0608,$0630,$0658,$0680,$06A8,$06D0,$06F8,$0720,$0748,$0770,$0798,$07C0
-00052  1096  00 D8 28   COLORRAMTABLE BYTE $D800,$D828,$D850,$D878,$D8A0,$D8C8,$D8F0,$D918,$D940,$D968,$D990,$D9B8,$D9E0,$DA08,$DA30,$DA58,$DA80,$DAA8,$DAD0,$DAF8,$DB20,$DB48,$DB70,$DB98,$DBC0
-00053  10C8             ZEROPTR    = $FB
-00054  10C8             ZEROPTR1   = $FE
-00055  10C8             
-00056  10C8  00         CURRX      BYTE $00
-00057  10C9  00         CURRY      BYTE $00
-00058  10CA  00         CURRCHAR   BYTE $00
-00059  10CB  00         CURRLEN    BYTE $00
-00060  10CC  00         CURRCOL    BYTE $00
-00061  10CD             
-00062  10CD             DEFM       SETPOINTERS
-00063  10CD                        LDA ROWTABLE,Y          ;STORE POINTER TO ROW
-00064  10CD                        STA ZEROPTR
-00065  10CD                        LDA ROWTABLE+1,Y
-00066  10CD                        STA ZEROPTR+1
-00067  10CD                        LDA COLORRAMTABLE,Y
-00068  10CD                        STA ZEROPTR1
-00069  10CD                        LDA COLORRAMTABLE+1,Y
-00070  10CD                        STA ZEROPTR1+1
-00071  10CD             
-00072  10CD             
-00073  10CD  A2 00      DRAWROOM   LDX #$00
-00074  10CF  BD 00 40   @GONEXT    LDA $4000,X
-00075  10D2  C9 FF                 CMP #$FF
-00076  10D4  F0 23                 BEQ @RETURN
-00077  10D6  8D C9 10              STA CURRY
-00078  10D9  BD 01 40              LDA $4001,X
-00079  10DC  8D C8 10              STA CURRX
-00080  10DF  BD 02 40              LDA $4002,X             ;STORE CHAR
-00081  10E2  8D CA 10              STA CURRCHAR
-00082  10E5  BD 04 40              LDA $4004,X
-00083  10E8  29 0F                 AND #$0F
-00084  10EA  8D CC 10              STA CURRCOL
-00085  10ED  BD 04 40              LDA $4004,X
-00086  10F0  29 80                 AND #$80
-00087  10F2  C9 80                 CMP #$80                ;IS VERTICAL?
-00088  10F4  F0 3B                 BEQ @VERTICAL
-00089  10F6  4C FA 10              JMP @HORIZONTAL
-00090  10F9  60         @RETURN    RTS
-00091  10FA  CE C8 10   @HORIZONTAL DEC CURRX
-00092  10FD  AD C9 10              LDA CURRY
-00093  1100  0A                    ASL
-00094  1101  A8                    TAY
-00095  1102             
-00096  1102             
-00097  1102  B9 64 10              LDA ROWTABLE,Y
-00098  1105  85 FB                 STA ZEROPTR
-00099  1107  B9 65 10              LDA ROWTABLE+1,Y
-00100  110A  85 FC                 STA ZEROPTR+1
-00101  110C  B9 96 10              LDA COLORRAMTABLE,Y
-00102  110F  85 FE                 STA ZEROPTR1
-00103  1111  B9 97 10              LDA COLORRAMTABLE+1,Y
-00104  1114  85 FF                 STA ZEROPTR1+1
-00105  1116  BD 03 40              LDA $4003,X             ;STORE LEN
-00106  1119  6D C8 10              ADC CURRX               ;SET COUNTER
-00107  111C  A8                    TAY
-00108  111D  C8                    INY
-00109  111E  CC C8 10   @HORILOOP  CPY CURRX
-00110  1121  F0 4B                 BEQ @CONTINUE
-00111  1123  AD CA 10              LDA CURRCHAR
-00112  1126  91 FB                 STA (ZEROPTR),Y
-00113  1128  AD CC 10              LDA CURRCOL
-00114  112B  91 FE                 STA (ZEROPTR1),Y
-00115  112D  88                    DEY
-00116  112E  4C 1E 11              JMP @HORILOOP
-00117  1131  BD 03 40   @VERTICAL  LDA $4003,X
-00118  1134  6D C9 10              ADC CURRY
-00119  1137  8D CB 10              STA CURRLEN
-00120  113A  CE C9 10              DEC CURRY
-00121  113D  AD CB 10   @VERTLOOP  LDA CURRLEN
-00122  1140  CD C9 10              CMP CURRY
-00123  1143  F0 29                 BEQ @CONTINUE
-00124  1145  0A                    ASL
-00125  1146  A8                    TAY
-00126  1147             
-00127  1147             
-00128  1147  B9 64 10              LDA ROWTABLE,Y
-00129  114A  85 FB                 STA ZEROPTR
-00130  114C  B9 65 10              LDA ROWTABLE+1,Y
-00131  114F  85 FC                 STA ZEROPTR+1
-00132  1151  B9 96 10              LDA COLORRAMTABLE,Y
-00133  1154  85 FE                 STA ZEROPTR1
-00134  1156  B9 97 10              LDA COLORRAMTABLE+1,Y
-00135  1159  85 FF                 STA ZEROPTR1+1
-00136  115B  AC C8 10              LDY CURRX
-00137  115E  AD CA 10              LDA CURRCHAR
-00138  1161  91 FB                 STA (ZEROPTR),Y
-00139  1163  AD CC 10              LDA CURRCOL
-00140  1166  91 FE                 STA (ZEROPTR1),Y
-00141  1168  CE CB 10              DEC CURRLEN
-00142  116B  4C 3D 11              JMP @VERTLOOP
-00143  116E  E8         @CONTINUE  INX
-00144  116F  E8                    INX
-00145  1170  E8                    INX
-00146  1171  E8                    INX
-00147  1172  E8                    INX
-00148  1173  4C CF 10              JMP @GONEXT
-00149  1176  60                    RTS
-00150  1177             
-00151  1177             DEFM       DRAWLINE                ;/1 = LINEOFFSET
-00152  1177                        LDX #$00
-00153  1177             @LOOP      LDA $4000+/1,X
-00154  1177                        STA $0400+/1,X
-00155  1177                        LDA $43E8+/1,X
-00156  1177                        STA $D800+/1,X
-00157  1177                        INX
-00158  1177                        CLC
-00159  1177                        CPX #$C8
-00160  1177                        BNE @LOOP
-00161  1177             
-00162  1177             
-00163  1177             
-00164  1177             
-00165  1177  A2 00      DRAWBG     LDX #$00
-00166  1179  BD 00 40   @LOOP      LDA $4000+0,X
-00167  117C  9D 00 04              STA $0400+0,X
-00168  117F  BD E8 43              LDA $43E8+0,X
-00169  1182  9D 00 D8              STA $D800+0,X
-00170  1185  E8                    INX
-00171  1186  18                    CLC
-00172  1187  E0 C8                 CPX #$C8
-00173  1189  D0 EE                 BNE @LOOP
-00174  118B             
-00175  118B             
-00176  118B  A2 00                 LDX #$00
-00177  118D  BD C8 40   @LOOP      LDA $4000+200,X
-00178  1190  9D C8 04              STA $0400+200,X
-00179  1193  BD B0 44              LDA $43E8+200,X
-00180  1196  9D C8 D8              STA $D800+200,X
-00181  1199  E8                    INX
-00182  119A  18                    CLC
-00183  119B  E0 C8                 CPX #$C8
-00184  119D  D0 EE                 BNE @LOOP
-00185  119F             
-00186  119F             
-00187  119F  A2 00                 LDX #$00
-00188  11A1  BD 90 41   @LOOP      LDA $4000+400,X
-00189  11A4  9D 90 05              STA $0400+400,X
-00190  11A7  BD 78 45              LDA $43E8+400,X
-00191  11AA  9D 90 D9              STA $D800+400,X
-00192  11AD  E8                    INX
-00193  11AE  18                    CLC
-00194  11AF  E0 C8                 CPX #$C8
-00195  11B1  D0 EE                 BNE @LOOP
-00196  11B3             
-00197  11B3             
-00198  11B3  A2 00                 LDX #$00
-00199  11B5  BD 58 42   @LOOP      LDA $4000+600,X
-00200  11B8  9D 58 06              STA $0400+600,X
-00201  11BB  BD 40 46              LDA $43E8+600,X
-00202  11BE  9D 58 DA              STA $D800+600,X
-00203  11C1  E8                    INX
-00204  11C2  18                    CLC
-00205  11C3  E0 C8                 CPX #$C8
-00206  11C5  D0 EE                 BNE @LOOP
-00207  11C7             
-00208  11C7             
-00209  11C7  A2 00                 LDX #$00
-00210  11C9  BD 20 43   @LOOP      LDA $4000+800,X
-00211  11CC  9D 20 07              STA $0400+800,X
-00212  11CF  BD 08 47              LDA $43E8+800,X
-00213  11D2  9D 20 DB              STA $D800+800,X
-00214  11D5  E8                    INX
-00215  11D6  18                    CLC
-00216  11D7  E0 C8                 CPX #$C8
-00217  11D9  D0 EE                 BNE @LOOP
-00218  11DB  60                    RTS
-00219  11DC             JOYUP      =       #$01
-00220  11DC             JOYDOWN    =       #$02
-00221  11DC             JOYLEFT    =       #$04
-00222  11DC             JOYRIGHT=  #$08
-00223  11DC             JOYFIRE    =       #$10
-00224  11DC             
-00225  11DC             DEFM       CHECKJOY        ;/1 = JOY BUTTON, /2 = CHECK FAIL ROUTINE
-00226  11DC                        LDA $DC00
-00227  11DC                        AND #/1
-00228  11DC                        CMP #/1
-00229  11DC                        BEQ /2
-00230  11DC             
-00231  11DC  00 00      COLLPOS    BYTE $00,$00
-00232  11DE             
-00233  11DE  69 01      COLLPOSY   ADC #$01                        ;OFFSET SOME PIXELS
-00234  11E0  4A                    LSR                             ;YPOS / 4 (ROWTABLE CONTAINS 16BIT POINTERS)
-00235  11E1  4A                    LSR
-00236  11E2  E9 07                 SBC #$07                        ;OFFSET FOR TOP BORDER
-00237  11E4  60                    RTS                             ;YPOS OFFSET IS DOUBLED (1 CHAR = 2 OFFSET)
-00238  11E5             
-00239  11E5  29 FE      STRPOSY    AND #$FE                        ;AVOID UNEVEN NUMBERS
-00240  11E7  8D DD 11              STA COLLPOS+1
-00241  11EA  A8                    TAY
-00242  11EB  B9 64 10              LDA ROWTABLE,Y
-00243  11EE  85 FB                 STA ZEROPTR
-00244  11F0  B9 65 10              LDA ROWTABLE+1,Y
-00245  11F3  85 FC                 STA ZEROPTR+1
-00246  11F5  60                    RTS
-00247  11F6             
-00248  11F6  4A         COLLPOSX   LSR                             ;XPOS / 8
-00249  11F7  4A                    LSR
-00250  11F8  4A                    LSR
-00251  11F9  E9 01                 SBC #$01                        ;CENTER OFFSET
-00252  11FB  60                    RTS
-00253  11FC             
-00254  11FC  D0 05      LDCHARATPOS BNE @CHKOVERFLOW
-00255  11FE  98                    TYA
-00256  11FF  18                    CLC
-00257  1200  69 1F                 ADC #$1F
-00258  1202  A8                    TAY
-00259  1203  98         @CHKOVERFLOW TYA
-00260  1204  C9 28                 CMP #$28                        ;MAKE SURE THAT POSITION OVERFLOWS WITH X-POSITION
-00261  1206  90 02                 BCC @END
-00262  1208  A0 27                 LDY #$27
-00263  120A  8C DC 11   @END       STY COLLPOS
-00264  120D                        ;LDA #$00
-00265  120D                        ;STA (ZEROPTR),Y
-00266  120D  B1 FB                 LDA (ZEROPTR),Y
-00267  120F                        ;LDA #$80
-00268  120F  60                    RTS
-00269  1210             
-00270  1210             DEFM       GETOVERFLOWBIT
-00271  1210                        TAY
-00272  1210                        LDA $D010
-00273  1210                        AND #/1
-00274  1210                        CMP #/1                        ;IF UPPER BIT IS USED, ADD 31 TO CHARPTR
-00275  1210             
-00276  1210  A9 80      INITPLAYER LDA #ANIMIDLE
-00277  1212  8D F8 07              STA $07F8               ;SET SPRITE POINTER
-00278  1215  A9 40                 LDA #$40
-00279  1217  8D 00 D0              STA $D000               ;SET SPRITE X POS
-00280  121A  A9 A0                 LDA #$A0
-00281  121C  8D 01 D0              STA $D001               ;SET SPRITE Y POS
-00282  121F  A9 01                 LDA #$01
-00283  1221  8D 15 D0              STA $D015               ;ENABLE SPRITE 0
-00284  1224  8D 1C D0              STA $D01C               ;SET MULTICOLOR SPRITE 0
-00285  1227  A9 01                 LDA #$01
-00286  1229  8D 27 D0              STA $D027               ;SET SPRITE COLOR
-00287  122C  60                    RTS
-00288  122D             
-00289  122D  20 AA 12   UPDATEPLAYER JSR PLAYERMOVE
-00290  1230  AE C9 13              LDX JUMPPOS
-00291  1233  E0 00                 CPX #$00
-00292  1235  F0 43                 BEQ @END                ;JUMPPOS == 0 => NO JUMP
-00293  1237  AD 01 D0              LDA $D001               ;CHECK IF TILE IS ABOVE PLAYER
-00294  123A  20 DE 11              JSR COLLPOSY
-00295  123D  E9 04                 SBC #$04
-00296  123F  20 E5 11              JSR STRPOSY
-00297  1242  AD 00 D0              LDA $D000
-00298  1245  20 F6 11              JSR COLLPOSX
-00299  1248             
-00300  1248             
-00301  1248  A8                    TAY
-00302  1249  AD 10 D0              LDA $D010
-00303  124C  29 01                 AND #$01
-00304  124E  C9 01                 CMP #$01
-00305  1250  20 FC 11              JSR LDCHARATPOS
-00306  1253  C9 E0                 CMP #$E0                ;IF SOLID TILE, STOP JUMP
-00307  1255  D0 05                 BNE @CHECKJUMP          ;ELSE CONTINUE JUMP
-00308  1257  A9 17                 LDA #SINETABLEHALF+1      ;MAKE JUMP FALL
-00309  1259  8D C9 13              STA JUMPPOS
-00310  125C  AD 01 D0   @CHECKJUMP LDA $D001
-00311  125F  AE C9 13              LDX JUMPPOS
-00312  1262  E0 16                 CPX #SINETABLEHALF
-00313  1264  B0 06                 BCS @FALLING
-00314  1266  FD C9 13              SBC SINETABLE-1,X       ;JUMPING
-00315  1269  4C 6F 12              JMP @UPDATEY
-00316  126C  7D C9 13   @FALLING   ADC SINETABLE-1,X
-00317  126F  8D 01 D0   @UPDATEY   STA $D001
-00318  1272  E0 2D                 CPX #SINETABLELEN
-00319  1274  F0 04                 BEQ @END
-00320  1276  E8                    INX
-00321  1277  8E C9 13              STX JUMPPOS
-00322  127A  20 76 13   @END       JSR PLAYERGRAVITY
-00323  127D  20 81 12              JSR PLAYERANIM
-00324  1280  60                    RTS
-00325  1281             
-00326  1281  AD C7 13   PLAYERANIM LDA ANIMCOUNTER
-00327  1284  C9 04                 CMP #ANIMSPEED
-00328  1286  90 1E                 BCC @INCCOUNT
-00329  1288  A9 00                 LDA #$00
-00330  128A  8D C7 13              STA ANIMCOUNTER
-00331  128D  AE C8 13              LDX ANIMFRAME
-00332  1290  E8                    INX
-00333  1291  E0 03                 CPX #ANIMLEN
-00334  1293  D0 02                 BNE @UPDATEFRAME
-00335  1295  A2 00                 LDX #$00
-00336  1297  8E C8 13   @UPDATEFRAME STX ANIMFRAME
-00337  129A  8A                    TXA
-00338  129B  18                    CLC
-00339  129C  6D C6 13              ADC ANIMOFFSET
-00340  129F  AA                    TAX
-00341  12A0  BD BA 13              LDA ANIMATIONS,X
-00342  12A3  8D F8 07              STA $07F8
-00343  12A6  EE C7 13   @INCCOUNT  INC ANIMCOUNTER
-00344  12A9  60         @END       RTS
-00345  12AA                        
-00346  12AA             
-00347  12AA  AD 10 D0   PLAYERMOVE LDA $D010
-00348  12AD  29 01                 AND #$01
-00349  12AF  C9 01                 CMP #$01
-00350  12B1  F0 1C                 BEQ @ISUPPER
-00351  12B3  AD 00 D0              LDA $D000
-00352  12B6  C9 FF                 CMP #$FF
-00353  12B8  D0 08                 BNE @CHECKLOW
-00354  12BA  A9 00                 LDA #$00
-00355  12BC  8D 00 D0              STA $D000
-00356  12BF  4C E8 12              JMP @FLIPUPPER
-00357  12C2  18         @CHECKLOW  CLC
-00358  12C3  C9 00                 CMP #$00
-00359  12C5  D0 29                 BNE @CHECKIDLE
-00360  12C7  A9 56                 LDA #$56
-00361  12C9  8D 00 D0              STA $D000
-00362  12CC  4C E8 12              JMP @FLIPUPPER
-00363  12CF  AD 00 D0   @ISUPPER   LDA $D000
-00364  12D2  C9 57                 CMP #$57
-00365  12D4  D0 08                 BNE @CHECKLOWER
-00366  12D6  A9 00                 LDA #$00
-00367  12D8  8D 00 D0              STA $D000
-00368  12DB  4C E8 12              JMP @FLIPUPPER
-00369  12DE  18         @CHECKLOWER CLC
-00370  12DF  C9 00                 CMP #$00
-00371  12E1  D0 0D                 BNE @CHECKIDLE
-00372  12E3  A9 FF                 LDA #$FF
-00373  12E5  8D 00 D0              STA $D000
-00374  12E8  AD 10 D0   @FLIPUPPER LDA $D010
-00375  12EB  49 01                 EOR #01
-00376  12ED  8D 10 D0              STA $D010
-00377  12F0  AD C6 13   @CHECKIDLE LDA ANIMOFFSET
-00378  12F3  C9 04                 CMP #$04
-00379  12F5  90 05                 BCC @MOVERIGHT
-00380  12F7  E9 06                 SBC #$06                        ;OFFSET FROM WALK TO IDLELEFT
-00381  12F9  8D C6 13              STA ANIMOFFSET
-00382  12FC             
-00383  12FC             
-00384  12FC  AD 00 DC   @MOVERIGHT LDA $DC00
-00385  12FF  29 08                 AND #JOYRIGHT
-00386  1301  C9 08                 CMP #JOYRIGHT
-00387  1303  F0 2A                 BEQ @MOVELEFT
-00388  1305  A9 06                 LDA #WALKRIGHT                  ;SET ANIMATION
-00389  1307  8D C6 13              STA ANIMOFFSET
-00390  130A  AD 01 D0              LDA $D001                       ;CHECK FOR COLLISIONS
-00391  130D  20 DE 11              JSR COLLPOSY
-00392  1310  E9 02                 SBC #$02                        ;OFFSET Y 1 CHAR UP
-00393  1312  20 E5 11              JSR STRPOSY
-00394  1315  AD 00 D0              LDA $D000
-00395  1318  20 F6 11              JSR COLLPOSX
-00396  131B  69 01                 ADC #$01                        ;OFFSET X 1 CHAR RIGHT
-00397  131D             
-00398  131D             
-00399  131D  A8                    TAY
-00400  131E  AD 10 D0              LDA $D010
-00401  1321  29 01                 AND #$01
-00402  1323  C9 01                 CMP #$01
-00403  1325  20 FC 11              JSR LDCHARATPOS
-00404  1328  C9 E0                 CMP #$E0
-00405  132A  F0 03                 BEQ @MOVELEFT
-00406  132C  EE 00 D0              INC $D000
-00407  132F             
-00408  132F             
-00409  132F  AD 00 DC   @MOVELEFT  LDA $DC00
-00410  1332  29 04                 AND #JOYLEFT
-00411  1334  C9 04                 CMP #JOYLEFT
-00412  1336  F0 2A                 BEQ @MOVEUP
-00413  1338  A9 09                 LDA #WALKLEFT                   ;SET ANIMATION
-00414  133A  8D C6 13              STA ANIMOFFSET
-00415  133D  AD 01 D0              LDA $D001                       ;CHECK FOR COLLISIONS
-00416  1340  20 DE 11              JSR COLLPOSY
-00417  1343  E9 02                 SBC #$02                        ;OFFSET Y 1 CHAR UP
-00418  1345  20 E5 11              JSR STRPOSY
-00419  1348  AD 00 D0              LDA $D000
-00420  134B  20 F6 11              JSR COLLPOSX
-00421  134E  E9 01                 SBC #$01                        ;OFFSET X 1 CHAR LEFT
-00422  1350             
-00423  1350             
-00424  1350  A8                    TAY
-00425  1351  AD 10 D0              LDA $D010
-00426  1354  29 01                 AND #$01
-00427  1356  C9 01                 CMP #$01
-00428  1358  20 FC 11              JSR LDCHARATPOS
-00429  135B  C9 E0                 CMP #$E0
-00430  135D  F0 03                 BEQ @MOVEUP
-00431  135F  CE 00 D0              DEC $D000
-00432  1362             
-00433  1362             
-00434  1362  AD 00 DC   @MOVEUP    LDA $DC00
-00435  1365  29 01                 AND #JOYUP
-00436  1367  C9 01                 CMP #JOYUP
-00437  1369  F0 0A                 BEQ @END
-00438  136B  AD C9 13              LDA JUMPPOS
-00439  136E  C9 00                 CMP #$00
-00440  1370  D0 03                 BNE @END
-00441  1372  EE C9 13              INC JUMPPOS
-00442  1375  60         @END       RTS
-00443  1376             
-00444  1376  AD 01 D0   PLAYERGRAVITY LDA $D001
-00445  1379  20 DE 11              JSR COLLPOSY
-00446  137C  20 E5 11              JSR STRPOSY
-00447  137F  AD 00 D0              LDA $D000
-00448  1382  20 F6 11              JSR COLLPOSX
-00449  1385             
-00450  1385             
-00451  1385  A8                    TAY
-00452  1386  AD 10 D0              LDA $D010
-00453  1389  29 01                 AND #$01
-00454  138B  C9 01                 CMP #$01
-00455  138D  20 FC 11              JSR LDCHARATPOS
-00456  1390  C9 80                 CMP #$80
-00457  1392  90 19                 BCC @CHECKFALL
-00458  1394  AD C9 13   @ONGROUND  LDA JUMPPOS
-00459  1397  C9 16                 CMP #SINETABLEHALF
-00460  1399  90 1E                 BCC @END
-00461  139B  AD DD 11              LDA COLLPOS+1                   ;GET ROW COLLISION
-00462  139E  0A                    ASL
-00463  139F  0A                    ASL
-00464  13A0  69 1D                 ADC #$1D
-00465  13A2  8D 01 D0              STA $D001                       ;MOVE SPRITE TO GROUND
-00466  13A5  A9 00                 LDA #$00
-00467  13A7  8D C9 13              STA JUMPPOS
-00468  13AA  4C B9 13              JMP @END
-00469  13AD  AD C9 13   @CHECKFALL LDA JUMPPOS                     ;IF NOT ON GROUND AND JUMPPOS == 0, START FALLING
-00470  13B0  C9 00                 CMP #$00
-00471  13B2  D0 05                 BNE @END
-00472  13B4  A9 16                 LDA #SINETABLEHALF
-00473  13B6  8D C9 13              STA JUMPPOS
-00474  13B9  60         @END       RTS
-00475  13BA             
-00476  13BA             ANIMIDLE   = $80
-00477  13BA             ANIMLEN    = $03
-00478  13BA             ANIMSPEED  = $04
-00479  13BA             IDLERIGHT  = $00
-00480  13BA             IDLELEFT   = $03
-00481  13BA             WALKRIGHT  = $06
-00482  13BA             WALKLEFT   = $09
-00483  13BA  80 80 80   ANIMATIONS BYTE $80,$80,$80                ;IDLE RIGHT     $00
-00484  13BD  81 81 81              BYTE $81,$81,$81                ;IDLE LEFT      $03
-00485  13C0  82 83 84              BYTE $82,$83,$84                ;WALK RIGHT     $06
-00486  13C3  85 86 87              BYTE $85,$86,$87                ;WALK LEFT      $09
-00487  13C6  06         ANIMOFFSET BYTE $06
-00488  13C7  00         ANIMCOUNTER BYTE $00
-00489  13C8  00         ANIMFRAME  BYTE $00
-00490  13C9             
-00491  13C9  17         JUMPPOS    BYTE $17
-00492  13CA             SINETABLELEN = 45
-00493  13CA             SINETABLEHALF= 22
-00494  13CA  03 02 02   SINETABLE  BYTE $03,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$01,$01,$01,$01,$01,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$01,$01,$01,$01,$01,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$03
-00495  13F8             *=$2000    
-00496  2000             ; IDLE RIGHT
-00497  2000  02 00 80              BYTE 2,0,128
-00498  2003  00 82 00              BYTE 0,130,0
-00499  2006  00 82 00              BYTE 0,130,0
-00500  2009  00 82 00              BYTE 0,130,0
-00501  200C  00 82 00              BYTE 0,130,0
-00502  200F  00 3C 00              BYTE 0,60,0
-00503  2012  00 FF 00              BYTE 0,255,0
-00504  2015  0C F7 00              BYTE 12,247,0
-00505  2018  0F F5 00              BYTE 15,245,0
-00506  201B  03 FF 00              BYTE 3,255,0
-00507  201E  00 F5 00              BYTE 0,245,0
-00508  2021  00 FD 00              BYTE 0,253,0
-00509  2024  00 00 00              BYTE 0,0,0
-00510  2027  02 AA 15              BYTE 2,170,21
-00511  202A  08 AA B0              BYTE 8,170,176
-00512  202D  08 AA 10              BYTE 8,170,16
-00513  2030  08 AA 00              BYTE 8,170,0
-00514  2033  0C AA 00              BYTE 12,170,0
-00515  2036  00 82 00              BYTE 0,130,0
-00516  2039  00 82 00              BYTE 0,130,0
-00517  203C  00 82 00              BYTE 0,130,0
-00518  203F  00                    BYTE 0
-00519  2040             
-00520  2040             ; IDLE LEFT
-00521  2040  02 00 80              BYTE 2,0,128
-00522  2043  00 82 00              BYTE 0,130,0
-00523  2046  00 82 00              BYTE 0,130,0
-00524  2049  00 82 00              BYTE 0,130,0
-00525  204C  00 82 00              BYTE 0,130,0
-00526  204F  00 3C 00              BYTE 0,60,0
-00527  2052  00 FF 00              BYTE 0,255,0
-00528  2055  00 DF 30              BYTE 0,223,48
-00529  2058  00 5F F0              BYTE 0,95,240
-00530  205B  00 FF C0              BYTE 0,255,192
-00531  205E  00 5F 00              BYTE 0,95,0
-00532  2061  00 7F 00              BYTE 0,127,0
-00533  2064  00 00 00              BYTE 0,0,0
-00534  2067  54 AA 80              BYTE 84,170,128
-00535  206A  0E AA 20              BYTE 14,170,32
-00536  206D  04 AA 20              BYTE 4,170,32
-00537  2070  00 AA 20              BYTE 0,170,32
-00538  2073  00 AA 30              BYTE 0,170,48
-00539  2076  00 82 00              BYTE 0,130,0
-00540  2079  00 82 00              BYTE 0,130,0
-00541  207C  00 82 00              BYTE 0,130,0
-00542  207F  00                    BYTE 0
-00543  2080             
-00544  2080             ; WALK RIGHT 0
-00545  2080  02 00 80              BYTE 2,0,128
-00546  2083  00 82 00              BYTE 0,130,0
-00547  2086  00 82 00              BYTE 0,130,0
-00548  2089  00 82 00              BYTE 0,130,0
-00549  208C  00 82 00              BYTE 0,130,0
-00550  208F  00 3C 00              BYTE 0,60,0
-00551  2092  00 FF 00              BYTE 0,255,0
-00552  2095  0C F7 00              BYTE 12,247,0
-00553  2098  0F F5 00              BYTE 15,245,0
-00554  209B  03 FF 00              BYTE 3,255,0
-00555  209E  00 F5 00              BYTE 0,245,0
-00556  20A1  00 FD 00              BYTE 0,253,0
-00557  20A4  00 00 00              BYTE 0,0,0
-00558  20A7  02 AA 15              BYTE 2,170,21
-00559  20AA  08 AA B0              BYTE 8,170,176
-00560  20AD  08 AA 10              BYTE 8,170,16
-00561  20B0  08 AA 00              BYTE 8,170,0
-00562  20B3  0C AA 00              BYTE 12,170,0
-00563  20B6  00 80 80              BYTE 0,128,128
-00564  20B9  00 80 80              BYTE 0,128,128
-00565  20BC  02 00 80              BYTE 2,0,128
-00566  20BF  00                    BYTE 0
-00567  20C0             
-00568  20C0             ; WALK RIGHT 1
-00569  20C0  00 00 00              BYTE 0,0,0
-00570  20C3  02 00 80              BYTE 2,0,128
-00571  20C6  00 82 00              BYTE 0,130,0
-00572  20C9  00 82 00              BYTE 0,130,0
-00573  20CC  00 82 00              BYTE 0,130,0
-00574  20CF  00 3C 00              BYTE 0,60,0
-00575  20D2  00 FF 00              BYTE 0,255,0
-00576  20D5  0C F7 00              BYTE 12,247,0
-00577  20D8  0F F5 00              BYTE 15,245,0
-00578  20DB  03 FF 00              BYTE 3,255,0
-00579  20DE  00 F5 00              BYTE 0,245,0
-00580  20E1  00 FD 15              BYTE 0,253,21
-00581  20E4  00 00 30              BYTE 0,0,48
-00582  20E7  02 AA 90              BYTE 2,170,144
-00583  20EA  08 AA 00              BYTE 8,170,0
-00584  20ED  08 AA 00              BYTE 8,170,0
-00585  20F0  0C AA 00              BYTE 12,170,0
-00586  20F3  00 AA 00              BYTE 0,170,0
-00587  20F6  00 80 80              BYTE 0,128,128
-00588  20F9  02 00 20              BYTE 2,0,32
-00589  20FC  08 00 20              BYTE 8,0,32
-00590  20FF  00                    BYTE 0
-00591  2100             
-00592  2100             ; WALK RIGHT 2
-00593  2100  00 00 00              BYTE 0,0,0
-00594  2103  00 00 00              BYTE 0,0,0
-00595  2106  0A 00 A0              BYTE 10,0,160
-00596  2109  00 82 00              BYTE 0,130,0
-00597  210C  00 82 00              BYTE 0,130,0
-00598  210F  00 82 00              BYTE 0,130,0
-00599  2112  00 3C 00              BYTE 0,60,0
-00600  2115  00 FF 00              BYTE 0,255,0
-00601  2118  0C F7 00              BYTE 12,247,0
-00602  211B  0F F5 00              BYTE 15,245,0
-00603  211E  03 FF 00              BYTE 3,255,0
-00604  2121  00 F5 00              BYTE 0,245,0
-00605  2124  00 FD 00              BYTE 0,253,0
-00606  2127  02 AA 00              BYTE 2,170,0
-00607  212A  08 AA 15              BYTE 8,170,21
-00608  212D  08 AA B0              BYTE 8,170,176
-00609  2130  0C AA 10              BYTE 12,170,16
-00610  2133  00 AA 00              BYTE 0,170,0
-00611  2136  00 82 00              BYTE 0,130,0
-00612  2139  00 28 00              BYTE 0,40,0
-00613  213C  00 88 00              BYTE 0,136,0
-00614  213F  00                    BYTE 0
-00615  2140             
-00616  2140             ; WALK LEFT 0
-00617  2140  02 00 80              BYTE 2,0,128
-00618  2143  00 82 00              BYTE 0,130,0
-00619  2146  00 82 00              BYTE 0,130,0
-00620  2149  00 82 00              BYTE 0,130,0
-00621  214C  00 82 00              BYTE 0,130,0
-00622  214F  00 3C 00              BYTE 0,60,0
-00623  2152  00 FF 00              BYTE 0,255,0
-00624  2155  00 DF 30              BYTE 0,223,48
-00625  2158  00 5F F0              BYTE 0,95,240
-00626  215B  00 FF C0              BYTE 0,255,192
-00627  215E  00 5F 00              BYTE 0,95,0
-00628  2161  00 7F 00              BYTE 0,127,0
-00629  2164  00 00 00              BYTE 0,0,0
-00630  2167  54 AA 80              BYTE 84,170,128
-00631  216A  0E AA 20              BYTE 14,170,32
-00632  216D  04 AA 20              BYTE 4,170,32
-00633  2170  00 AA 20              BYTE 0,170,32
-00634  2173  00 AA 30              BYTE 0,170,48
-00635  2176  02 02 00              BYTE 2,2,0
-00636  2179  02 02 00              BYTE 2,2,0
-00637  217C  02 00 80              BYTE 2,0,128
-00638  217F  00                    BYTE 0
-00639  2180             
-00640  2180             ; WALK LEFT 1
-00641  2180  00 00 00              BYTE 0,0,0
-00642  2183  02 00 80              BYTE 2,0,128
-00643  2186  00 82 00              BYTE 0,130,0
-00644  2189  00 82 00              BYTE 0,130,0
-00645  218C  00 82 00              BYTE 0,130,0
-00646  218F  00 3C 00              BYTE 0,60,0
-00647  2192  00 FF 00              BYTE 0,255,0
-00648  2195  00 DF 30              BYTE 0,223,48
-00649  2198  00 5F F0              BYTE 0,95,240
-00650  219B  00 FF C0              BYTE 0,255,192
-00651  219E  00 5F 00              BYTE 0,95,0
-00652  21A1  54 7F 00              BYTE 84,127,0
-00653  21A4  0C 00 00              BYTE 12,0,0
-00654  21A7  06 AA 80              BYTE 6,170,128
-00655  21AA  00 AA 20              BYTE 0,170,32
-00656  21AD  00 AA 20              BYTE 0,170,32
-00657  21B0  00 AA 30              BYTE 0,170,48
-00658  21B3  00 AA 00              BYTE 0,170,0
-00659  21B6  02 02 00              BYTE 2,2,0
-00660  21B9  08 00 80              BYTE 8,0,128
-00661  21BC  08 00 20              BYTE 8,0,32
-00662  21BF  00                    BYTE 0
-00663  21C0             
-00664  21C0             ; WALK LEFT 2
-00665  21C0  00 00 00              BYTE 0,0,0
-00666  21C3  00 00 00              BYTE 0,0,0
-00667  21C6  0A 00 A0              BYTE 10,0,160
-00668  21C9  00 82 00              BYTE 0,130,0
-00669  21CC  00 82 00              BYTE 0,130,0
-00670  21CF  00 82 00              BYTE 0,130,0
-00671  21D2  00 3C 00              BYTE 0,60,0
-00672  21D5  00 FF 00              BYTE 0,255,0
-00673  21D8  00 DF 30              BYTE 0,223,48
-00674  21DB  00 5F F0              BYTE 0,95,240
-00675  21DE  00 FF C0              BYTE 0,255,192
-00676  21E1  00 5F 00              BYTE 0,95,0
-00677  21E4  00 7F 00              BYTE 0,127,0
-00678  21E7  00 AA 80              BYTE 0,170,128
-00679  21EA  54 AA 20              BYTE 84,170,32
-00680  21ED  0E AA 20              BYTE 14,170,32
-00681  21F0  04 AA 30              BYTE 4,170,48
-00682  21F3  00 AA 00              BYTE 0,170,0
-00683  21F6  00 82 00              BYTE 0,130,0
-00684  21F9  00 28 00              BYTE 0,40,0
-00685  21FC  00 22 00              BYTE 0,34,0
-00686  21FF  00                    BYTE 0
-00687  2200             
-00688  2200             
-00689  2200             *=$4000    ;Y,  X,   CHAR,HOR/VER + LEN
-00690  4000  18 01 E0              BYTE $18, $01, $E0, $26, %00000100
-00691  4005  14 01 E8              BYTE $14, $01, $E8, $03, %00000111
-00692  400A  0E 01 E8              BYTE $0E, $01, $E8, $05, %00000111
-00693  400F  08 01 E8              BYTE $08, $01, $E8, $07, %00000111
-00694  4014  0F 10 E0              BYTE $0F, $10, $E0, $09, %00000111
-00695  4019  10 13 E0              BYTE $10, $13, $E0, $06, %10000010
-00696  401E  10 16 E0              BYTE $10, $16, $E0, $06, %10000010
-00697  4023  14 17 E8              BYTE $14, $17, $E8, $05, %00000111
-00698  4028  0A 20 E0              BYTE $0A, $20, $E0, $07, %00000100
-00699  402D  00 00 E0              BYTE $00, $00, $E0, $19, %10001010
-00700  4032  00 27 E0              BYTE $00, $27, $E0, $19, %10001010
-00701  4037  FF                    BYTE $FF ;EOF
-00702  4038             
+00008  1000  20 C1 10   INIT       JSR CLEARSCR
+00009  1003  20 48 11              JSR DRAWROOM
+00010  1006  A9 02                 LDA #$02                ;SET UP SPRITE MULTICOLOR
+00011  1008  8D 25 D0              STA $D025
+00012  100B  A9 05                 LDA #$05
+00013  100D  8D 26 D0              STA $D026
+00014  1010  20 8B 12              JSR INITPLAYER
+00015  1013  78                    SEI                     ;SET UP IRQ ROUTINE
+00016  1014  A0 1F                 LDY #$7F/4
+00017  1016  8C 0D DC              STY $DC0D
+00018  1019  8C 0D DD              STY $DD0D
+00019  101C  AD 0D DC              LDA $DC0D
+00020  101F  AD 0D DD              LDA $DD0D
+00021  1022  A9 01                 LDA #$01
+00022  1024  8D 1A D0              STA $D01A
+00023  1027  A9 65                 LDA #<IRQ
+00024  1029  A2 10                 LDX #>IRQ
+00025  102B  8D 14 03              STA $0314
+00026  102E  8E 15 03              STX $0315
+00027  1031  A9 00                 LDA #$00
+00028  1033  8D 12 D0              STA $D012
+00029  1036  AD 11 D0              LDA $D011
+00030  1039  29 7F                 AND #$7F
+00031  103B  8D 11 D0              STA $D011
+00032  103E  58                    CLI
+00033  103F  A9 00      @BORDER    LDA #$00
+00034  1041  8D FF 3F              STA $3FFF
+00035  1044  A9 F9      @WAIT249   LDA #$F9
+00036  1046  CD 12 D0              CMP $D012
+00037  1049  D0 F9                 BNE @WAIT249
+00038  104B  AD 11 D0              LDA $D011
+00039  104E  29 F7                 AND #$F7
+00040  1050  8D 11 D0              STA $D011
+00041  1053  A9 FF      @WAIT255   LDA #$FF
+00042  1055  CD 12 D0              CMP $D012
+00043  1058  D0 F9                 BNE @WAIT255
+00044  105A  AD 11 D0              LDA $D011
+00045  105D  09 08                 ORA #$08
+00046  105F  8D 11 D0              STA $D011
+00047  1062  4C 3F 10              JMP @BORDER
+00048  1065             
+00049  1065  CE 19 D0   IRQ        DEC $D019
+00050  1068  20 A8 12              JSR UPDATEPLAYER
+00051  106B  20 7A 10              JSR INCBG
+00052  106E  4C 81 EA              JMP $EA81
+00053  1071             
+00054  1071  CE 19 D0   BGCOL      DEC $D019
+00055  1074  20 7A 10              JSR INCBG
+00056  1077  4C 81 EA              JMP $EA81
+00057  107A             
+00058  107A  AC D5 10   INCBG      LDY CURRBG
+00059  107D  B9 D6 10              LDA BGTABLE,Y
+00060  1080  8D 21 D0              STA $D021
+00061  1083  C0 00                 CPY #$00
+00062  1085  F0 06                 BEQ @SETBG
+00063  1087  C0 04                 CPY #BGLEN-1
+00064  1089  F0 02                 BEQ @SETBG
+00065  108B  A9 02                 LDA #BORDERCOL
+00066  108D  8D 20 D0   @SETBG     STA $D020
+00067  1090  C0 04                 CPY #BGLEN-1
+00068  1092  F0 16                 BEQ @RESETIRQ
+00069  1094  78         @NEXTIRQ   SEI
+00070  1095  A9 71                 LDA #<BGCOL
+00071  1097  A2 10                 LDX #>BGCOL
+00072  1099  8D 14 03              STA $0314
+00073  109C  8E 15 03              STX $0315
+00074  109F  B9 DB 10              LDA RASTERROWS,Y
+00075  10A2  8D 12 D0              STA $D012
+00076  10A5  58                    CLI
+00077  10A6  C8                    INY
+00078  10A7  4C BD 10              JMP @END
+00079  10AA  78         @RESETIRQ  SEI
+00080  10AB  A9 65                 LDA #<IRQ
+00081  10AD  A2 10                 LDX #>IRQ
+00082  10AF  8D 14 03              STA $0314
+00083  10B2  8E 15 03              STX $0315
+00084  10B5  A9 00                 LDA #$00
+00085  10B7  8D 12 D0              STA $D012
+00086  10BA  58                    CLI
+00087  10BB  A0 00                 LDY #$00
+00088  10BD  8C D5 10   @END       STY CURRBG
+00089  10C0  60                    RTS
+00090  10C1             
+00091  10C1  A9 20      CLEARSCR   LDA #$20
+00092  10C3  A2 00                 LDX #$00
+00093  10C5  9D 00 04   @LOOP      STA $0400,X
+00094  10C8  9D 00 05              STA $0500,X
+00095  10CB  9D 00 06              STA $0600,X
+00096  10CE  9D E8 06              STA $06E8,X
+00097  10D1  E8                    INX
+00098  10D2  D0 F1                 BNE @LOOP
+00099  10D4  60                    RTS
+00100  10D5             
+00101  10D5             BGLEN      = 5
+00102  10D5             BORDERCOL  = $02
+00103  10D5  00         CURRBG     BYTE $00
+00104  10D6  08 0F 0C   BGTABLE    BYTE 8,15,12,11,0
+00105  10DB  31 74 B6   RASTERROWS BYTE 49,116,182,250
+00106  10DF  00 04 28   ROWTABLE   BYTE $0400,$0428,$0450,$0478,$04A0,$04C8,$04F0,$0518,$0540,$0568,$0590,$05B8,$05E0,$0608,$0630,$0658,$0680,$06A8,$06D0,$06F8,$0720,$0748,$0770,$0798,$07C0
+00107  1111  00 D8 28   COLORRAMTABLE BYTE $D800,$D828,$D850,$D878,$D8A0,$D8C8,$D8F0,$D918,$D940,$D968,$D990,$D9B8,$D9E0,$DA08,$DA30,$DA58,$DA80,$DAA8,$DAD0,$DAF8,$DB20,$DB48,$DB70,$DB98,$DBC0
+00108  1143             ZEROPTR    = $FB
+00109  1143             ZEROPTR1   = $FE
+00110  1143             
+00111  1143  00         CURRX      BYTE $00
+00112  1144  00         CURRY      BYTE $00
+00113  1145  00         CURRCHAR   BYTE $00
+00114  1146  00         CURRLEN    BYTE $00
+00115  1147  00         CURRCOL    BYTE $00
+00116  1148             
+00117  1148             DEFM       SETPOINTERS
+00118  1148                        LDA ROWTABLE,Y          ;STORE POINTER TO ROW
+00119  1148                        STA ZEROPTR
+00120  1148                        LDA ROWTABLE+1,Y
+00121  1148                        STA ZEROPTR+1
+00122  1148                        LDA COLORRAMTABLE,Y
+00123  1148                        STA ZEROPTR1
+00124  1148                        LDA COLORRAMTABLE+1,Y
+00125  1148                        STA ZEROPTR1+1
+00126  1148             
+00127  1148             
+00128  1148  A2 00      DRAWROOM   LDX #$00
+00129  114A  BD 00 40   @GONEXT    LDA $4000,X
+00130  114D  C9 FF                 CMP #$FF
+00131  114F  F0 23                 BEQ @RETURN
+00132  1151  8D 44 11              STA CURRY
+00133  1154  BD 01 40              LDA $4001,X
+00134  1157  8D 43 11              STA CURRX
+00135  115A  BD 02 40              LDA $4002,X             ;STORE CHAR
+00136  115D  8D 45 11              STA CURRCHAR
+00137  1160  BD 04 40              LDA $4004,X
+00138  1163  29 0F                 AND #$0F
+00139  1165  8D 47 11              STA CURRCOL
+00140  1168  BD 04 40              LDA $4004,X
+00141  116B  29 80                 AND #$80
+00142  116D  C9 80                 CMP #$80                ;IS VERTICAL?
+00143  116F  F0 3B                 BEQ @VERTICAL
+00144  1171  4C 75 11              JMP @HORIZONTAL
+00145  1174  60         @RETURN    RTS
+00146  1175  CE 43 11   @HORIZONTAL DEC CURRX
+00147  1178  AD 44 11              LDA CURRY
+00148  117B  0A                    ASL
+00149  117C  A8                    TAY
+00150  117D             
+00151  117D             
+00152  117D  B9 DF 10              LDA ROWTABLE,Y
+00153  1180  85 FB                 STA ZEROPTR
+00154  1182  B9 E0 10              LDA ROWTABLE+1,Y
+00155  1185  85 FC                 STA ZEROPTR+1
+00156  1187  B9 11 11              LDA COLORRAMTABLE,Y
+00157  118A  85 FE                 STA ZEROPTR1
+00158  118C  B9 12 11              LDA COLORRAMTABLE+1,Y
+00159  118F  85 FF                 STA ZEROPTR1+1
+00160  1191  BD 03 40              LDA $4003,X             ;STORE LEN
+00161  1194  6D 43 11              ADC CURRX               ;SET COUNTER
+00162  1197  A8                    TAY
+00163  1198  C8                    INY
+00164  1199  CC 43 11   @HORILOOP  CPY CURRX
+00165  119C  F0 4B                 BEQ @CONTINUE
+00166  119E  AD 45 11              LDA CURRCHAR
+00167  11A1  91 FB                 STA (ZEROPTR),Y
+00168  11A3  AD 47 11              LDA CURRCOL
+00169  11A6  91 FE                 STA (ZEROPTR1),Y
+00170  11A8  88                    DEY
+00171  11A9  4C 99 11              JMP @HORILOOP
+00172  11AC  BD 03 40   @VERTICAL  LDA $4003,X
+00173  11AF  6D 44 11              ADC CURRY
+00174  11B2  8D 46 11              STA CURRLEN
+00175  11B5  CE 44 11              DEC CURRY
+00176  11B8  AD 46 11   @VERTLOOP  LDA CURRLEN
+00177  11BB  CD 44 11              CMP CURRY
+00178  11BE  F0 29                 BEQ @CONTINUE
+00179  11C0  0A                    ASL
+00180  11C1  A8                    TAY
+00181  11C2             
+00182  11C2             
+00183  11C2  B9 DF 10              LDA ROWTABLE,Y
+00184  11C5  85 FB                 STA ZEROPTR
+00185  11C7  B9 E0 10              LDA ROWTABLE+1,Y
+00186  11CA  85 FC                 STA ZEROPTR+1
+00187  11CC  B9 11 11              LDA COLORRAMTABLE,Y
+00188  11CF  85 FE                 STA ZEROPTR1
+00189  11D1  B9 12 11              LDA COLORRAMTABLE+1,Y
+00190  11D4  85 FF                 STA ZEROPTR1+1
+00191  11D6  AC 43 11              LDY CURRX
+00192  11D9  AD 45 11              LDA CURRCHAR
+00193  11DC  91 FB                 STA (ZEROPTR),Y
+00194  11DE  AD 47 11              LDA CURRCOL
+00195  11E1  91 FE                 STA (ZEROPTR1),Y
+00196  11E3  CE 46 11              DEC CURRLEN
+00197  11E6  4C B8 11              JMP @VERTLOOP
+00198  11E9  E8         @CONTINUE  INX
+00199  11EA  E8                    INX
+00200  11EB  E8                    INX
+00201  11EC  E8                    INX
+00202  11ED  E8                    INX
+00203  11EE  4C 4A 11              JMP @GONEXT
+00204  11F1  60                    RTS
+00205  11F2             
+00206  11F2             DEFM       DRAWLINE                ;/1 = LINEOFFSET
+00207  11F2                        LDX #$00
+00208  11F2             @LOOP      LDA $4000+/1,X
+00209  11F2                        STA $0400+/1,X
+00210  11F2                        LDA $43E8+/1,X
+00211  11F2                        STA $D800+/1,X
+00212  11F2                        INX
+00213  11F2                        CLC
+00214  11F2                        CPX #$C8
+00215  11F2                        BNE @LOOP
+00216  11F2             
+00217  11F2             
+00218  11F2             
+00219  11F2             
+00220  11F2  A2 00      DRAWBG     LDX #$00
+00221  11F4  BD 00 40   @LOOP      LDA $4000+0,X
+00222  11F7  9D 00 04              STA $0400+0,X
+00223  11FA  BD E8 43              LDA $43E8+0,X
+00224  11FD  9D 00 D8              STA $D800+0,X
+00225  1200  E8                    INX
+00226  1201  18                    CLC
+00227  1202  E0 C8                 CPX #$C8
+00228  1204  D0 EE                 BNE @LOOP
+00229  1206             
+00230  1206             
+00231  1206  A2 00                 LDX #$00
+00232  1208  BD C8 40   @LOOP      LDA $4000+200,X
+00233  120B  9D C8 04              STA $0400+200,X
+00234  120E  BD B0 44              LDA $43E8+200,X
+00235  1211  9D C8 D8              STA $D800+200,X
+00236  1214  E8                    INX
+00237  1215  18                    CLC
+00238  1216  E0 C8                 CPX #$C8
+00239  1218  D0 EE                 BNE @LOOP
+00240  121A             
+00241  121A             
+00242  121A  A2 00                 LDX #$00
+00243  121C  BD 90 41   @LOOP      LDA $4000+400,X
+00244  121F  9D 90 05              STA $0400+400,X
+00245  1222  BD 78 45              LDA $43E8+400,X
+00246  1225  9D 90 D9              STA $D800+400,X
+00247  1228  E8                    INX
+00248  1229  18                    CLC
+00249  122A  E0 C8                 CPX #$C8
+00250  122C  D0 EE                 BNE @LOOP
+00251  122E             
+00252  122E             
+00253  122E  A2 00                 LDX #$00
+00254  1230  BD 58 42   @LOOP      LDA $4000+600,X
+00255  1233  9D 58 06              STA $0400+600,X
+00256  1236  BD 40 46              LDA $43E8+600,X
+00257  1239  9D 58 DA              STA $D800+600,X
+00258  123C  E8                    INX
+00259  123D  18                    CLC
+00260  123E  E0 C8                 CPX #$C8
+00261  1240  D0 EE                 BNE @LOOP
+00262  1242             
+00263  1242             
+00264  1242  A2 00                 LDX #$00
+00265  1244  BD 20 43   @LOOP      LDA $4000+800,X
+00266  1247  9D 20 07              STA $0400+800,X
+00267  124A  BD 08 47              LDA $43E8+800,X
+00268  124D  9D 20 DB              STA $D800+800,X
+00269  1250  E8                    INX
+00270  1251  18                    CLC
+00271  1252  E0 C8                 CPX #$C8
+00272  1254  D0 EE                 BNE @LOOP
+00273  1256  60                    RTS
+00274  1257             JOYUP      =       #$01
+00275  1257             JOYDOWN    =       #$02
+00276  1257             JOYLEFT    =       #$04
+00277  1257             JOYRIGHT=  #$08
+00278  1257             JOYFIRE    =       #$10
+00279  1257             
+00280  1257             DEFM       CHECKJOY        ;/1 = JOY BUTTON, /2 = CHECK FAIL ROUTINE
+00281  1257                        LDA $DC00
+00282  1257                        AND #/1
+00283  1257                        CMP #/1
+00284  1257                        BEQ /2
+00285  1257             
+00286  1257  00 00      COLLPOS    BYTE $00,$00
+00287  1259             
+00288  1259  69 01      COLLPOSY   ADC #$01                        ;OFFSET SOME PIXELS
+00289  125B  4A                    LSR                             ;YPOS / 4 (ROWTABLE CONTAINS 16BIT POINTERS)
+00290  125C  4A                    LSR
+00291  125D  E9 07                 SBC #$07                        ;OFFSET FOR TOP BORDER
+00292  125F  60                    RTS                             ;YPOS OFFSET IS DOUBLED (1 CHAR = 2 OFFSET)
+00293  1260             
+00294  1260  29 FE      STRPOSY    AND #$FE                        ;AVOID UNEVEN NUMBERS
+00295  1262  8D 58 12              STA COLLPOS+1
+00296  1265  A8                    TAY
+00297  1266  B9 DF 10              LDA ROWTABLE,Y
+00298  1269  85 FB                 STA ZEROPTR
+00299  126B  B9 E0 10              LDA ROWTABLE+1,Y
+00300  126E  85 FC                 STA ZEROPTR+1
+00301  1270  60                    RTS
+00302  1271             
+00303  1271  4A         COLLPOSX   LSR                             ;XPOS / 8
+00304  1272  4A                    LSR
+00305  1273  4A                    LSR
+00306  1274  E9 01                 SBC #$01                        ;CENTER OFFSET
+00307  1276  60                    RTS
+00308  1277             
+00309  1277  D0 05      LDCHARATPOS BNE @CHKOVERFLOW
+00310  1279  98                    TYA
+00311  127A  18                    CLC
+00312  127B  69 1F                 ADC #$1F
+00313  127D  A8                    TAY
+00314  127E  98         @CHKOVERFLOW TYA
+00315  127F  C9 28                 CMP #$28                        ;MAKE SURE THAT POSITION OVERFLOWS WITH X-POSITION
+00316  1281  90 02                 BCC @END
+00317  1283  A0 27                 LDY #$27
+00318  1285  8C 57 12   @END       STY COLLPOS
+00319  1288                        ;LDA #$00
+00320  1288                        ;STA (ZEROPTR),Y
+00321  1288  B1 FB                 LDA (ZEROPTR),Y
+00322  128A                        ;LDA #$80
+00323  128A  60                    RTS
+00324  128B             
+00325  128B             DEFM       GETOVERFLOWBIT
+00326  128B                        TAY
+00327  128B                        LDA $D010
+00328  128B                        AND #/1
+00329  128B                        CMP #/1                        ;IF UPPER BIT IS USED, ADD 31 TO CHARPTR
+00330  128B             
+00331  128B  A9 80      INITPLAYER LDA #ANIMIDLE
+00332  128D  8D F8 07              STA $07F8               ;SET SPRITE POINTER
+00333  1290  A9 40                 LDA #$40
+00334  1292  8D 00 D0              STA $D000               ;SET SPRITE X POS
+00335  1295  A9 A0                 LDA #$A0
+00336  1297  8D 01 D0              STA $D001               ;SET SPRITE Y POS
+00337  129A  A9 01                 LDA #$01
+00338  129C  8D 15 D0              STA $D015               ;ENABLE SPRITE 0
+00339  129F  8D 1C D0              STA $D01C               ;SET MULTICOLOR SPRITE 0
+00340  12A2  A9 01                 LDA #$01
+00341  12A4  8D 27 D0              STA $D027               ;SET SPRITE COLOR
+00342  12A7  60                    RTS
+00343  12A8             
+00344  12A8  20 25 13   UPDATEPLAYER JSR PLAYERMOVE
+00345  12AB  AE 44 14              LDX JUMPPOS
+00346  12AE  E0 00                 CPX #$00
+00347  12B0  F0 43                 BEQ @END                ;JUMPPOS == 0 => NO JUMP
+00348  12B2  AD 01 D0              LDA $D001               ;CHECK IF TILE IS ABOVE PLAYER
+00349  12B5  20 59 12              JSR COLLPOSY
+00350  12B8  E9 04                 SBC #$04
+00351  12BA  20 60 12              JSR STRPOSY
+00352  12BD  AD 00 D0              LDA $D000
+00353  12C0  20 71 12              JSR COLLPOSX
+00354  12C3             
+00355  12C3             
+00356  12C3  A8                    TAY
+00357  12C4  AD 10 D0              LDA $D010
+00358  12C7  29 01                 AND #$01
+00359  12C9  C9 01                 CMP #$01
+00360  12CB  20 77 12              JSR LDCHARATPOS
+00361  12CE  C9 E0                 CMP #$E0                ;IF SOLID TILE, STOP JUMP
+00362  12D0  D0 05                 BNE @CHECKJUMP          ;ELSE CONTINUE JUMP
+00363  12D2  A9 17                 LDA #SINETABLEHALF+1      ;MAKE JUMP FALL
+00364  12D4  8D 44 14              STA JUMPPOS
+00365  12D7  AD 01 D0   @CHECKJUMP LDA $D001
+00366  12DA  AE 44 14              LDX JUMPPOS
+00367  12DD  E0 16                 CPX #SINETABLEHALF
+00368  12DF  B0 06                 BCS @FALLING
+00369  12E1  FD 44 14              SBC SINETABLE-1,X       ;JUMPING
+00370  12E4  4C EA 12              JMP @UPDATEY
+00371  12E7  7D 44 14   @FALLING   ADC SINETABLE-1,X
+00372  12EA  8D 01 D0   @UPDATEY   STA $D001
+00373  12ED  E0 2D                 CPX #SINETABLELEN
+00374  12EF  F0 04                 BEQ @END
+00375  12F1  E8                    INX
+00376  12F2  8E 44 14              STX JUMPPOS
+00377  12F5  20 F1 13   @END       JSR PLAYERGRAVITY
+00378  12F8  20 FC 12              JSR PLAYERANIM
+00379  12FB  60                    RTS
+00380  12FC             
+00381  12FC  AD 42 14   PLAYERANIM LDA ANIMCOUNTER
+00382  12FF  C9 04                 CMP #ANIMSPEED
+00383  1301  90 1E                 BCC @INCCOUNT
+00384  1303  A9 00                 LDA #$00
+00385  1305  8D 42 14              STA ANIMCOUNTER
+00386  1308  AE 43 14              LDX ANIMFRAME
+00387  130B  E8                    INX
+00388  130C  E0 03                 CPX #ANIMLEN
+00389  130E  D0 02                 BNE @UPDATEFRAME
+00390  1310  A2 00                 LDX #$00
+00391  1312  8E 43 14   @UPDATEFRAME STX ANIMFRAME
+00392  1315  8A                    TXA
+00393  1316  18                    CLC
+00394  1317  6D 41 14              ADC ANIMOFFSET
+00395  131A  AA                    TAX
+00396  131B  BD 35 14              LDA ANIMATIONS,X
+00397  131E  8D F8 07              STA $07F8
+00398  1321  EE 42 14   @INCCOUNT  INC ANIMCOUNTER
+00399  1324  60         @END       RTS
+00400  1325                        
+00401  1325             
+00402  1325  AD 10 D0   PLAYERMOVE LDA $D010
+00403  1328  29 01                 AND #$01
+00404  132A  C9 01                 CMP #$01
+00405  132C  F0 1C                 BEQ @ISUPPER
+00406  132E  AD 00 D0              LDA $D000
+00407  1331  C9 FF                 CMP #$FF
+00408  1333  D0 08                 BNE @CHECKLOW
+00409  1335  A9 00                 LDA #$00
+00410  1337  8D 00 D0              STA $D000
+00411  133A  4C 63 13              JMP @FLIPUPPER
+00412  133D  18         @CHECKLOW  CLC
+00413  133E  C9 00                 CMP #$00
+00414  1340  D0 29                 BNE @CHECKIDLE
+00415  1342  A9 56                 LDA #$56
+00416  1344  8D 00 D0              STA $D000
+00417  1347  4C 63 13              JMP @FLIPUPPER
+00418  134A  AD 00 D0   @ISUPPER   LDA $D000
+00419  134D  C9 57                 CMP #$57
+00420  134F  D0 08                 BNE @CHECKLOWER
+00421  1351  A9 00                 LDA #$00
+00422  1353  8D 00 D0              STA $D000
+00423  1356  4C 63 13              JMP @FLIPUPPER
+00424  1359  18         @CHECKLOWER CLC
+00425  135A  C9 00                 CMP #$00
+00426  135C  D0 0D                 BNE @CHECKIDLE
+00427  135E  A9 FF                 LDA #$FF
+00428  1360  8D 00 D0              STA $D000
+00429  1363  AD 10 D0   @FLIPUPPER LDA $D010
+00430  1366  49 01                 EOR #01
+00431  1368  8D 10 D0              STA $D010
+00432  136B  AD 41 14   @CHECKIDLE LDA ANIMOFFSET
+00433  136E  C9 04                 CMP #$04
+00434  1370  90 05                 BCC @MOVERIGHT
+00435  1372  E9 06                 SBC #$06                        ;OFFSET FROM WALK TO IDLELEFT
+00436  1374  8D 41 14              STA ANIMOFFSET
+00437  1377             
+00438  1377             
+00439  1377  AD 00 DC   @MOVERIGHT LDA $DC00
+00440  137A  29 08                 AND #JOYRIGHT
+00441  137C  C9 08                 CMP #JOYRIGHT
+00442  137E  F0 2A                 BEQ @MOVELEFT
+00443  1380  A9 06                 LDA #WALKRIGHT                  ;SET ANIMATION
+00444  1382  8D 41 14              STA ANIMOFFSET
+00445  1385  AD 01 D0              LDA $D001                       ;CHECK FOR COLLISIONS
+00446  1388  20 59 12              JSR COLLPOSY
+00447  138B  E9 02                 SBC #$02                        ;OFFSET Y 1 CHAR UP
+00448  138D  20 60 12              JSR STRPOSY
+00449  1390  AD 00 D0              LDA $D000
+00450  1393  20 71 12              JSR COLLPOSX
+00451  1396  69 01                 ADC #$01                        ;OFFSET X 1 CHAR RIGHT
+00452  1398             
+00453  1398             
+00454  1398  A8                    TAY
+00455  1399  AD 10 D0              LDA $D010
+00456  139C  29 01                 AND #$01
+00457  139E  C9 01                 CMP #$01
+00458  13A0  20 77 12              JSR LDCHARATPOS
+00459  13A3  C9 E0                 CMP #$E0
+00460  13A5  F0 03                 BEQ @MOVELEFT
+00461  13A7  EE 00 D0              INC $D000
+00462  13AA             
+00463  13AA             
+00464  13AA  AD 00 DC   @MOVELEFT  LDA $DC00
+00465  13AD  29 04                 AND #JOYLEFT
+00466  13AF  C9 04                 CMP #JOYLEFT
+00467  13B1  F0 2A                 BEQ @MOVEUP
+00468  13B3  A9 09                 LDA #WALKLEFT                   ;SET ANIMATION
+00469  13B5  8D 41 14              STA ANIMOFFSET
+00470  13B8  AD 01 D0              LDA $D001                       ;CHECK FOR COLLISIONS
+00471  13BB  20 59 12              JSR COLLPOSY
+00472  13BE  E9 02                 SBC #$02                        ;OFFSET Y 1 CHAR UP
+00473  13C0  20 60 12              JSR STRPOSY
+00474  13C3  AD 00 D0              LDA $D000
+00475  13C6  20 71 12              JSR COLLPOSX
+00476  13C9  E9 01                 SBC #$01                        ;OFFSET X 1 CHAR LEFT
+00477  13CB             
+00478  13CB             
+00479  13CB  A8                    TAY
+00480  13CC  AD 10 D0              LDA $D010
+00481  13CF  29 01                 AND #$01
+00482  13D1  C9 01                 CMP #$01
+00483  13D3  20 77 12              JSR LDCHARATPOS
+00484  13D6  C9 E0                 CMP #$E0
+00485  13D8  F0 03                 BEQ @MOVEUP
+00486  13DA  CE 00 D0              DEC $D000
+00487  13DD             
+00488  13DD             
+00489  13DD  AD 00 DC   @MOVEUP    LDA $DC00
+00490  13E0  29 01                 AND #JOYUP
+00491  13E2  C9 01                 CMP #JOYUP
+00492  13E4  F0 0A                 BEQ @END
+00493  13E6  AD 44 14              LDA JUMPPOS
+00494  13E9  C9 00                 CMP #$00
+00495  13EB  D0 03                 BNE @END
+00496  13ED  EE 44 14              INC JUMPPOS
+00497  13F0  60         @END       RTS
+00498  13F1             
+00499  13F1  AD 01 D0   PLAYERGRAVITY LDA $D001
+00500  13F4  20 59 12              JSR COLLPOSY
+00501  13F7  20 60 12              JSR STRPOSY
+00502  13FA  AD 00 D0              LDA $D000
+00503  13FD  20 71 12              JSR COLLPOSX
+00504  1400             
+00505  1400             
+00506  1400  A8                    TAY
+00507  1401  AD 10 D0              LDA $D010
+00508  1404  29 01                 AND #$01
+00509  1406  C9 01                 CMP #$01
+00510  1408  20 77 12              JSR LDCHARATPOS
+00511  140B  C9 80                 CMP #$80
+00512  140D  90 19                 BCC @CHECKFALL
+00513  140F  AD 44 14   @ONGROUND  LDA JUMPPOS
+00514  1412  C9 16                 CMP #SINETABLEHALF
+00515  1414  90 1E                 BCC @END
+00516  1416  AD 58 12              LDA COLLPOS+1                   ;GET ROW COLLISION
+00517  1419  0A                    ASL
+00518  141A  0A                    ASL
+00519  141B  69 1D                 ADC #$1D
+00520  141D  8D 01 D0              STA $D001                       ;MOVE SPRITE TO GROUND
+00521  1420  A9 00                 LDA #$00
+00522  1422  8D 44 14              STA JUMPPOS
+00523  1425  4C 34 14              JMP @END
+00524  1428  AD 44 14   @CHECKFALL LDA JUMPPOS                     ;IF NOT ON GROUND AND JUMPPOS == 0, START FALLING
+00525  142B  C9 00                 CMP #$00
+00526  142D  D0 05                 BNE @END
+00527  142F  A9 16                 LDA #SINETABLEHALF
+00528  1431  8D 44 14              STA JUMPPOS
+00529  1434  60         @END       RTS
+00530  1435             
+00531  1435             ANIMIDLE   = $80
+00532  1435             ANIMLEN    = $03
+00533  1435             ANIMSPEED  = $04
+00534  1435             IDLERIGHT  = $00
+00535  1435             IDLELEFT   = $03
+00536  1435             WALKRIGHT  = $06
+00537  1435             WALKLEFT   = $09
+00538  1435  80 80 80   ANIMATIONS BYTE $80,$80,$80                ;IDLE RIGHT     $00
+00539  1438  81 81 81              BYTE $81,$81,$81                ;IDLE LEFT      $03
+00540  143B  82 83 84              BYTE $82,$83,$84                ;WALK RIGHT     $06
+00541  143E  85 86 87              BYTE $85,$86,$87                ;WALK LEFT      $09
+00542  1441  06         ANIMOFFSET BYTE $06
+00543  1442  00         ANIMCOUNTER BYTE $00
+00544  1443  00         ANIMFRAME  BYTE $00
+00545  1444             
+00546  1444  17         JUMPPOS    BYTE $17
+00547  1445             SINETABLELEN = 45
+00548  1445             SINETABLEHALF= 22
+00549  1445  03 02 02   SINETABLE  BYTE $03,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$01,$01,$01,$01,$01,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$01,$01,$01,$01,$01,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$03
+00550  1473             *=$2000    
+00551  2000             ; IDLE RIGHT
+00552  2000  02 00 80              BYTE 2,0,128
+00553  2003  00 82 00              BYTE 0,130,0
+00554  2006  00 82 00              BYTE 0,130,0
+00555  2009  00 82 00              BYTE 0,130,0
+00556  200C  00 82 00              BYTE 0,130,0
+00557  200F  00 3C 00              BYTE 0,60,0
+00558  2012  00 FF 00              BYTE 0,255,0
+00559  2015  0C F7 00              BYTE 12,247,0
+00560  2018  0F F5 00              BYTE 15,245,0
+00561  201B  03 FF 00              BYTE 3,255,0
+00562  201E  00 F5 00              BYTE 0,245,0
+00563  2021  00 FD 00              BYTE 0,253,0
+00564  2024  00 00 00              BYTE 0,0,0
+00565  2027  02 AA 15              BYTE 2,170,21
+00566  202A  08 AA B0              BYTE 8,170,176
+00567  202D  08 AA 10              BYTE 8,170,16
+00568  2030  08 AA 00              BYTE 8,170,0
+00569  2033  0C AA 00              BYTE 12,170,0
+00570  2036  00 82 00              BYTE 0,130,0
+00571  2039  00 82 00              BYTE 0,130,0
+00572  203C  00 82 00              BYTE 0,130,0
+00573  203F  00                    BYTE 0
+00574  2040             
+00575  2040             ; IDLE LEFT
+00576  2040  02 00 80              BYTE 2,0,128
+00577  2043  00 82 00              BYTE 0,130,0
+00578  2046  00 82 00              BYTE 0,130,0
+00579  2049  00 82 00              BYTE 0,130,0
+00580  204C  00 82 00              BYTE 0,130,0
+00581  204F  00 3C 00              BYTE 0,60,0
+00582  2052  00 FF 00              BYTE 0,255,0
+00583  2055  00 DF 30              BYTE 0,223,48
+00584  2058  00 5F F0              BYTE 0,95,240
+00585  205B  00 FF C0              BYTE 0,255,192
+00586  205E  00 5F 00              BYTE 0,95,0
+00587  2061  00 7F 00              BYTE 0,127,0
+00588  2064  00 00 00              BYTE 0,0,0
+00589  2067  54 AA 80              BYTE 84,170,128
+00590  206A  0E AA 20              BYTE 14,170,32
+00591  206D  04 AA 20              BYTE 4,170,32
+00592  2070  00 AA 20              BYTE 0,170,32
+00593  2073  00 AA 30              BYTE 0,170,48
+00594  2076  00 82 00              BYTE 0,130,0
+00595  2079  00 82 00              BYTE 0,130,0
+00596  207C  00 82 00              BYTE 0,130,0
+00597  207F  00                    BYTE 0
+00598  2080             
+00599  2080             ; WALK RIGHT 0
+00600  2080  02 00 80              BYTE 2,0,128
+00601  2083  00 82 00              BYTE 0,130,0
+00602  2086  00 82 00              BYTE 0,130,0
+00603  2089  00 82 00              BYTE 0,130,0
+00604  208C  00 82 00              BYTE 0,130,0
+00605  208F  00 3C 00              BYTE 0,60,0
+00606  2092  00 FF 00              BYTE 0,255,0
+00607  2095  0C F7 00              BYTE 12,247,0
+00608  2098  0F F5 00              BYTE 15,245,0
+00609  209B  03 FF 00              BYTE 3,255,0
+00610  209E  00 F5 00              BYTE 0,245,0
+00611  20A1  00 FD 00              BYTE 0,253,0
+00612  20A4  00 00 00              BYTE 0,0,0
+00613  20A7  02 AA 15              BYTE 2,170,21
+00614  20AA  08 AA B0              BYTE 8,170,176
+00615  20AD  08 AA 10              BYTE 8,170,16
+00616  20B0  08 AA 00              BYTE 8,170,0
+00617  20B3  0C AA 00              BYTE 12,170,0
+00618  20B6  00 80 80              BYTE 0,128,128
+00619  20B9  00 80 80              BYTE 0,128,128
+00620  20BC  02 00 80              BYTE 2,0,128
+00621  20BF  00                    BYTE 0
+00622  20C0             
+00623  20C0             ; WALK RIGHT 1
+00624  20C0  00 00 00              BYTE 0,0,0
+00625  20C3  02 00 80              BYTE 2,0,128
+00626  20C6  00 82 00              BYTE 0,130,0
+00627  20C9  00 82 00              BYTE 0,130,0
+00628  20CC  00 82 00              BYTE 0,130,0
+00629  20CF  00 3C 00              BYTE 0,60,0
+00630  20D2  00 FF 00              BYTE 0,255,0
+00631  20D5  0C F7 00              BYTE 12,247,0
+00632  20D8  0F F5 00              BYTE 15,245,0
+00633  20DB  03 FF 00              BYTE 3,255,0
+00634  20DE  00 F5 00              BYTE 0,245,0
+00635  20E1  00 FD 15              BYTE 0,253,21
+00636  20E4  00 00 30              BYTE 0,0,48
+00637  20E7  02 AA 90              BYTE 2,170,144
+00638  20EA  08 AA 00              BYTE 8,170,0
+00639  20ED  08 AA 00              BYTE 8,170,0
+00640  20F0  0C AA 00              BYTE 12,170,0
+00641  20F3  00 AA 00              BYTE 0,170,0
+00642  20F6  00 80 80              BYTE 0,128,128
+00643  20F9  02 00 20              BYTE 2,0,32
+00644  20FC  08 00 20              BYTE 8,0,32
+00645  20FF  00                    BYTE 0
+00646  2100             
+00647  2100             ; WALK RIGHT 2
+00648  2100  00 00 00              BYTE 0,0,0
+00649  2103  00 00 00              BYTE 0,0,0
+00650  2106  0A 00 A0              BYTE 10,0,160
+00651  2109  00 82 00              BYTE 0,130,0
+00652  210C  00 82 00              BYTE 0,130,0
+00653  210F  00 82 00              BYTE 0,130,0
+00654  2112  00 3C 00              BYTE 0,60,0
+00655  2115  00 FF 00              BYTE 0,255,0
+00656  2118  0C F7 00              BYTE 12,247,0
+00657  211B  0F F5 00              BYTE 15,245,0
+00658  211E  03 FF 00              BYTE 3,255,0
+00659  2121  00 F5 00              BYTE 0,245,0
+00660  2124  00 FD 00              BYTE 0,253,0
+00661  2127  02 AA 00              BYTE 2,170,0
+00662  212A  08 AA 15              BYTE 8,170,21
+00663  212D  08 AA B0              BYTE 8,170,176
+00664  2130  0C AA 10              BYTE 12,170,16
+00665  2133  00 AA 00              BYTE 0,170,0
+00666  2136  00 82 00              BYTE 0,130,0
+00667  2139  00 28 00              BYTE 0,40,0
+00668  213C  00 88 00              BYTE 0,136,0
+00669  213F  00                    BYTE 0
+00670  2140             
+00671  2140             ; WALK LEFT 0
+00672  2140  02 00 80              BYTE 2,0,128
+00673  2143  00 82 00              BYTE 0,130,0
+00674  2146  00 82 00              BYTE 0,130,0
+00675  2149  00 82 00              BYTE 0,130,0
+00676  214C  00 82 00              BYTE 0,130,0
+00677  214F  00 3C 00              BYTE 0,60,0
+00678  2152  00 FF 00              BYTE 0,255,0
+00679  2155  00 DF 30              BYTE 0,223,48
+00680  2158  00 5F F0              BYTE 0,95,240
+00681  215B  00 FF C0              BYTE 0,255,192
+00682  215E  00 5F 00              BYTE 0,95,0
+00683  2161  00 7F 00              BYTE 0,127,0
+00684  2164  00 00 00              BYTE 0,0,0
+00685  2167  54 AA 80              BYTE 84,170,128
+00686  216A  0E AA 20              BYTE 14,170,32
+00687  216D  04 AA 20              BYTE 4,170,32
+00688  2170  00 AA 20              BYTE 0,170,32
+00689  2173  00 AA 30              BYTE 0,170,48
+00690  2176  02 02 00              BYTE 2,2,0
+00691  2179  02 02 00              BYTE 2,2,0
+00692  217C  02 00 80              BYTE 2,0,128
+00693  217F  00                    BYTE 0
+00694  2180             
+00695  2180             ; WALK LEFT 1
+00696  2180  00 00 00              BYTE 0,0,0
+00697  2183  02 00 80              BYTE 2,0,128
+00698  2186  00 82 00              BYTE 0,130,0
+00699  2189  00 82 00              BYTE 0,130,0
+00700  218C  00 82 00              BYTE 0,130,0
+00701  218F  00 3C 00              BYTE 0,60,0
+00702  2192  00 FF 00              BYTE 0,255,0
+00703  2195  00 DF 30              BYTE 0,223,48
+00704  2198  00 5F F0              BYTE 0,95,240
+00705  219B  00 FF C0              BYTE 0,255,192
+00706  219E  00 5F 00              BYTE 0,95,0
+00707  21A1  54 7F 00              BYTE 84,127,0
+00708  21A4  0C 00 00              BYTE 12,0,0
+00709  21A7  06 AA 80              BYTE 6,170,128
+00710  21AA  00 AA 20              BYTE 0,170,32
+00711  21AD  00 AA 20              BYTE 0,170,32
+00712  21B0  00 AA 30              BYTE 0,170,48
+00713  21B3  00 AA 00              BYTE 0,170,0
+00714  21B6  02 02 00              BYTE 2,2,0
+00715  21B9  08 00 80              BYTE 8,0,128
+00716  21BC  08 00 20              BYTE 8,0,32
+00717  21BF  00                    BYTE 0
+00718  21C0             
+00719  21C0             ; WALK LEFT 2
+00720  21C0  00 00 00              BYTE 0,0,0
+00721  21C3  00 00 00              BYTE 0,0,0
+00722  21C6  0A 00 A0              BYTE 10,0,160
+00723  21C9  00 82 00              BYTE 0,130,0
+00724  21CC  00 82 00              BYTE 0,130,0
+00725  21CF  00 82 00              BYTE 0,130,0
+00726  21D2  00 3C 00              BYTE 0,60,0
+00727  21D5  00 FF 00              BYTE 0,255,0
+00728  21D8  00 DF 30              BYTE 0,223,48
+00729  21DB  00 5F F0              BYTE 0,95,240
+00730  21DE  00 FF C0              BYTE 0,255,192
+00731  21E1  00 5F 00              BYTE 0,95,0
+00732  21E4  00 7F 00              BYTE 0,127,0
+00733  21E7  00 AA 80              BYTE 0,170,128
+00734  21EA  54 AA 20              BYTE 84,170,32
+00735  21ED  0E AA 20              BYTE 14,170,32
+00736  21F0  04 AA 30              BYTE 4,170,48
+00737  21F3  00 AA 00              BYTE 0,170,0
+00738  21F6  00 82 00              BYTE 0,130,0
+00739  21F9  00 28 00              BYTE 0,40,0
+00740  21FC  00 22 00              BYTE 0,34,0
+00741  21FF  00                    BYTE 0
+00742  2200             
+00743  2200             
+00744  2200             *=$4000    ;Y,  X,   CHAR,HOR/VER + LEN
+00745  4000  18 01 E0              BYTE $18, $01, $E0, $26, %00000100
+00746  4005  14 01 E8              BYTE $14, $01, $E8, $03, %00000111
+00747  400A  0E 01 E8              BYTE $0E, $01, $E8, $05, %00000111
+00748  400F  08 01 E8              BYTE $08, $01, $E8, $07, %00000111
+00749  4014  0F 10 E0              BYTE $0F, $10, $E0, $09, %00000111
+00750  4019  10 13 E0              BYTE $10, $13, $E0, $06, %10000010
+00751  401E  10 16 E0              BYTE $10, $16, $E0, $06, %10000010
+00752  4023  14 17 E8              BYTE $14, $17, $E8, $05, %00000111
+00753  4028  0A 20 E0              BYTE $0A, $20, $E0, $07, %00000100
+00754  402D  00 00 E0              BYTE $00, $00, $E0, $19, %10001010
+00755  4032  00 27 E0              BYTE $00, $27, $E0, $19, %10001010
+00756  4037  FF                    BYTE $FF ;EOF
+00757  4038             
 
-******* 33 Label(s) *******
-~~~loop{00002} = $1179 
-~~~loop{00003} = $118D 
-~~~loop{00004} = $11A1 
-~~~loop{00005} = $11B5 
-~~~loop{00006} = $11C9 
-animations = $13BA 
-animCounter = $13C7 
-animFrame = $13C8 
-animOffset = $13C6 
-clearScr = $1050 
-collPos = $11DC 
-collPosX = $11F6 
-collPosY = $11DE 
-colorRamTable = $1096 
-currChar = $10CA 
-currCol = $10CC 
-currLen = $10CB 
-currX = $10C8 
-currY = $10C9 
-drawBg = $1177 
-drawRoom = $10CD 
+******* 38 Label(s) *******
+~~~loop{00002} = $11F4 
+~~~loop{00003} = $1208 
+~~~loop{00004} = $121C 
+~~~loop{00005} = $1230 
+~~~loop{00006} = $1244 
+animations = $1435 
+animCounter = $1442 
+animFrame = $1443 
+animOffset = $1441 
+bgCol = $1071 
+bgTable = $10D6 
+clearScr = $10C1 
+collPos = $1257 
+collPosX = $1271 
+collPosY = $1259 
+colorRamTable = $1111 
+currBg = $10D5 
+currChar = $1145 
+currCol = $1147 
+currLen = $1146 
+currX = $1143 
+currY = $1144 
+drawBg = $11F2 
+drawRoom = $1148 
+incBg = $107A 
 init = $1000 
-initPlayer = $1210 
-irq = $1047 
-jumpPos = $13C9 
-ldCharAtPos = $11FC 
-playerAnim = $1281 
-playerGravity = $1376 
-playerMove = $12AA 
-rowTable = $1064 
-sineTable = $13CA 
-strPosY = $11E5 
-updatePlayer = $122D 
+initPlayer = $128B 
+irq = $1065 
+jumpPos = $1444 
+ldCharAtPos = $1277 
+playerAnim = $12FC 
+playerGravity = $13F1 
+playerMove = $1325 
+rasterRows = $10DB 
+rowTable = $10DF 
+sineTable = $1445 
+strPosY = $1260 
+updatePlayer = $12A8 
 
 ******* 3 Unused label(s) *******
+@border
 @checkFall
 @checkIdle
 @checkJump
@@ -744,6 +805,7 @@ updatePlayer = $122D
 @checkLower
 @chkOverflow
 @continue
+@end
 @end
 @end
 @end
@@ -760,20 +822,27 @@ updatePlayer = $122D
 @moveLeft
 @moveRight
 @moveUp
+@nextIrq
 @onGround
+@resetIrq
 @return
+@setBg
 @updateFrame
 @updateY
+@wait249
+@wait255
 @vertical
 @vertLoop
 drawBg
 init
 sineTable
 
-******* 17 Variable(s) *******
+******* 19 Variable(s) *******
 animIdle  = $0080
 animLen  = $0003
 animSpeed  = $0004
+bgLen  = $0005
+borderCol  = $0002
 idleLeft  = $0003
 idleRight  = $0000
 joyDown  = $0002
@@ -788,7 +857,8 @@ walkLeft  = $0009
 walkRight  = $0006
 zeroPtr  = $00FB
 zeroPtr1  = $00FE
-******* -23 Unused variables(s) *******
+******* -29 Unused variables(s) *******
+bgLen
 idleLeft
 idleRight
 joyDown
